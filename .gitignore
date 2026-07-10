@@ -17,3 +17,5 @@ data/processed/*.jsonl
 *.mp3
 *.flac
 .ipynb_checkpoints/
+models/*.joblib
+training/text/output/
