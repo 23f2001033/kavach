@@ -12,6 +12,7 @@ dist/
 data/raw/
 data/processed/*.jsonl
 !data/processed/.gitkeep
+!data/processed/stats.json
 *.wav
 *.mp3
 *.flac
