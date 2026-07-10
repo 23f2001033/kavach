@@ -1,0 +1,15 @@
+# Kavach inference backend — core (offline) dependencies only.
+# faster-whisper (transcription) and onnxruntime (audio model) are intentionally
+# NOT listed here yet; they land with the transcription/audio-model phases.
+# The optional LLM explainer polish (google-generativeai) is also intentionally
+# not required here — it's an optional enhancement guarded behind GEMINI_API_KEY
+# and imported lazily in kavach/explain.py; install it yourself if you want it.
+
+fastapi>=0.110
+uvicorn[standard]>=0.29
+scikit-learn>=1.4
+joblib>=1.3
+numpy>=1.26
+pydantic>=2.6
+pytest>=8.0
+httpx>=0.27
