@@ -21,6 +21,15 @@ export default function ModeTabs({ mode, onChange }) {
       >
         Transcript mode
       </button>
+      <button
+        type="button"
+        role="tab"
+        aria-selected={mode === 'recording'}
+        className={`mode-tabs__tab ${mode === 'recording' ? 'is-active' : ''}`}
+        onClick={() => onChange('recording')}
+      >
+        Upload Recording
+      </button>
     </div>
   );
 }

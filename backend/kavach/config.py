@@ -64,5 +64,17 @@ HYSTERESIS_MARGIN = float(os.environ.get("KAVACH_HYSTERESIS_MARGIN", "0.05"))
 SESSION_MAX_CHARS = int(os.environ.get("KAVACH_SESSION_MAX_CHARS", "3000"))
 SESSION_MAX_COUNT = int(os.environ.get("KAVACH_SESSION_MAX_COUNT", "500"))
 
+# --- speech-to-text (POST /analyze/recording, kavach/transcribe.py) -----------
+# faster-whisper (CTranslate2) model config. "small" + int8 CPU is the v1
+# default: a reasonable accuracy/latency/RAM tradeoff on CPU-only hardware. The
+# very first transcription call downloads the model from Hugging Face Hub and
+# caches it locally (~/.cache/huggingface); every call after that is local.
+WHISPER_MODEL_SIZE = os.environ.get("KAVACH_WHISPER_MODEL_SIZE", "small")
+WHISPER_DEVICE = os.environ.get("KAVACH_WHISPER_DEVICE", "cpu")
+WHISPER_COMPUTE_TYPE = os.environ.get("KAVACH_WHISPER_COMPUTE_TYPE", "int8")
+
+# Recording upload: accepted container formats for POST /analyze/recording.
+RECORDING_ALLOWED_EXTENSIONS = {".wav", ".mp3", ".m4a", ".ogg", ".webm"}
+
 # --- CORS ----------------------------------------------------------------------
 CORS_ALLOW_ORIGINS = ["*"]

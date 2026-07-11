@@ -1,8 +1,9 @@
 # Kavach frontend
 
 Vite + React single-page app for Kavach: a live mic "Guard" mode, a paste-a-transcript
-mode, an animated risk gauge, and an elderly-friendly simplified view. Plain CSS,
-no UI framework, no external CDNs/fonts — everything ships from this folder.
+mode, an upload-a-recording mode, an animated risk gauge, and an elderly-friendly
+simplified view. Plain CSS, no UI framework, no external CDNs/fonts — everything
+ships from this folder.
 
 ## Dev workflow
 
@@ -44,7 +45,15 @@ points the user at **Transcript mode**, which works in any modern browser.
    playing near the mic). Watch the rolling transcript fill in and the gauge
    climb in real time; when it crosses into "high" you'll see the pulsing red
    banner, hear a spoken warning once, and see the scam-sign cards populate.
-4. Toggle **Elderly mode** in the header to show the simplified huge-font
+4. **Upload Recording mode** — pick a `.wav`/`.mp3`/`.m4a`/`.ogg`/`.webm` file
+   of a recorded call and hit "Analyze recording". The button shows
+   "Transcribing... first run downloads the speech model" while the backend
+   runs Whisper (the very first call on a fresh backend downloads the model,
+   ~464 MB, so that first run takes noticeably longer). Once done you get the
+   same gauge/explanation/scam-sign-card view as Transcript mode, plus the
+   raw transcript text and a "Voice-clone analysis: N% suspicion" line (or
+   "Voice-clone model: not yet loaded" until the ONNX audio model ships).
+5. Toggle **Elderly mode** in the header to show the simplified huge-font
    gauge + verdict + one-line advice view (voice alerts stay on).
 
 ## How Live Guard polling works
@@ -74,20 +83,26 @@ adaptation from the original spec: signature hits carry a `matches: string[]`
 field (not a singular `snippet`) — the UI renders `matches[0]` as the "matched
 snippet" on each scam-sign card.
 
+`POST /analyze/recording` is a `multipart/form-data` upload (not JSON), so
+`analyzeRecording()` in `api.js` bypasses the shared `request()` helper (which
+always sets `Content-Type: application/json`) and lets the browser set its
+own multipart boundary.
+
 ## Project structure
 
 ```
 src/
-  api.js                    fetch client for /health, /analyze/text, /analyze/window
+  api.js                    fetch client for /health, /analyze/text, /analyze/window, /analyze/recording
   hooks/
     useHealth.js             polls GET /health
     useSpeechRecognition.js  Web Speech API wrapper (continuous + interim)
     useVoiceAlert.js         speaks once on risk_level -> "high" transitions
   components/
     Header.jsx / StatusChip.jsx      brand, tagline, elderly-mode toggle, backend status
-    ModeTabs.jsx                     Live Guard / Transcript mode switch
+    ModeTabs.jsx                     Live Guard / Transcript mode / Upload Recording switch
     LiveGuard.jsx                    mic mode: language picker, transcript, chunk POSTing
     TranscriptMode.jsx               paste-a-transcript + example loaders
+    RecordingMode.jsx                file upload -> /analyze/recording, shows transcript + voice-clone line
     ResultPanel.jsx                  shared result rendering (full or elderly-simplified)
     RiskGauge.jsx                    SVG arc gauge (0-100, animated, colour-coded)
     AlertBanner.jsx / SignatureCards.jsx

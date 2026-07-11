@@ -1,9 +1,13 @@
 # Kavach inference backend — core (offline) dependencies only.
-# faster-whisper (transcription) and onnxruntime (audio model) are intentionally
-# NOT listed here yet; they land with the transcription/audio-model phases.
-# The optional LLM explainer polish (google-generativeai) is also intentionally
-# not required here — it's an optional enhancement guarded behind GEMINI_API_KEY
-# and imported lazily in kavach/explain.py; install it yourself if you want it.
+# onnxruntime (audio deepfake model) is intentionally NOT listed here yet; it
+# lands with the audio-model phase. faster-whisper (recording-upload
+# transcription, kavach/transcribe.py) IS a hard dependency as of the
+# POST /analyze/recording path — first use downloads a CTranslate2 model from
+# Hugging Face Hub and caches it locally, but the package import itself is
+# offline. The optional LLM explainer polish (google-generativeai) is also
+# intentionally not required here — it's an optional enhancement guarded
+# behind GEMINI_API_KEY and imported lazily in kavach/explain.py; install it
+# yourself if you want it.
 
 fastapi>=0.110
 uvicorn[standard]>=0.29
@@ -13,3 +17,5 @@ numpy>=1.26
 pydantic>=2.6
 pytest>=8.0
 httpx>=0.27
+python-multipart>=0.0.9
+faster-whisper>=1.0

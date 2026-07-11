@@ -4,6 +4,7 @@ import Footer from './components/Footer.jsx';
 import ModeTabs from './components/ModeTabs.jsx';
 import LiveGuard from './components/LiveGuard.jsx';
 import TranscriptMode from './components/TranscriptMode.jsx';
+import RecordingMode from './components/RecordingMode.jsx';
 import { useHealth } from './hooks/useHealth.js';
 import './App.css';
 
@@ -22,7 +23,9 @@ export default function App() {
       />
       <main className="app__main">
         {!elderlyMode && <ModeTabs mode={mode} onChange={setMode} />}
-        {mode === 'live' ? <LiveGuard elderlyMode={elderlyMode} /> : <TranscriptMode elderlyMode={elderlyMode} />}
+        {mode === 'live' && <LiveGuard elderlyMode={elderlyMode} />}
+        {mode === 'transcript' && <TranscriptMode elderlyMode={elderlyMode} />}
+        {mode === 'recording' && <RecordingMode elderlyMode={elderlyMode} />}
       </main>
       <Footer />
     </div>

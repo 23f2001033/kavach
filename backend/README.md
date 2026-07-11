@@ -74,6 +74,50 @@ Response shape is identical to `/analyze/text`. Sessions are in-memory only
 (bounded LRU, ~500 sessions) — a process restart clears them, which is fine
 for a live-call demo but means this is not a durable store.
 
+### `POST /analyze/recording`
+Multipart file upload of a recorded call (`wav`, `mp3`, `m4a`, `ogg`, or
+`webm`). Saves the upload to a temp file, transcribes it locally with
+faster-whisper (`kavach/transcribe.py`), prepends a single `"Caller: "` label
+to the transcript, then runs it through the same text+signature fusion as
+`/analyze/text` — and additionally folds in the audio deepfake score if
+`models/kavach_audio.onnx` is present (see "Audio model" below).
+
+Request: `multipart/form-data` with one field, `file`.
+
+Response — everything from `/analyze/text` plus:
+```json
+{
+  "risk_score": 0.78,
+  "risk_level": "high",
+  "text_score": 0.58,
+  "signature_hits": [...],
+  "explanation": "...",
+  "transcript": "Caller: I am calling from your bank. Your account will be blocked today. Share the OTP I just sent you immediately.",
+  "language": "en",
+  "audio_score": null,
+  "duration_seconds": 8.15
+}
+```
+
+**v1 limitation — no diarization.** faster-whisper returns one continuous
+transcript with no speaker separation; the whole thing gets a single
+`"Caller: "` prefix rather than distinguishing caller vs. receiver turns like
+the hand-written example transcripts elsewhere in this doc. A future version
+could add pyannote-style diarization to split turns properly.
+
+The first call to this endpoint in a process's lifetime downloads the
+faster-whisper model (`small`, int8, CPU) from Hugging Face Hub — ~464 MB —
+and caches it locally; every call after that (in any process, since the
+cache is on disk) is fully offline. Model size/device/compute-type are
+configurable via `KAVACH_WHISPER_MODEL_SIZE` / `KAVACH_WHISPER_DEVICE` /
+`KAVACH_WHISPER_COMPUTE_TYPE` (see `kavach/config.py`). Observed CPU latency
+for an 8-second clip with the default "small"/int8 config: ~2s one-time model
+load (once cached) + ~6.4s transcription — i.e. faster than real-time on a
+typical CPU, but not instant; the endpoint is synchronous.
+
+Unsupported file extensions get `400`; if faster-whisper somehow isn't
+installed, the endpoint returns `503` instead of crashing.
+
 ## Design notes
 
 - **Signature engine** (`kavach/signatures.py`): a data-driven knowledge base
@@ -108,7 +152,19 @@ for a live-call demo but means this is not a durable store.
   voice-deepfake ONNX model being trained separately. `onnxruntime` is
   import-guarded and intentionally **not** in `requirements.txt` yet; without
   it (or without `models/kavach_audio.onnx`), `.score()` always returns
-  `None` and fusion degrades gracefully.
+  `None` and fusion degrades gracefully. `load_waveform_16k()` in the same
+  module decodes an uploaded recording (any format `/analyze/recording`
+  accepts) into the 16 kHz mono float32 waveform the scorer expects —
+  `soundfile`/`scipy` are also import-guarded (not in `requirements.txt`),
+  and containers `soundfile` can't read directly (mp3/m4a/webm) fall back to
+  an `ffmpeg` transcode. Any failure anywhere in that chain (missing
+  package, missing ffmpeg, bad file) just returns `None`, same as "no audio
+  model at all" — `/analyze/recording`'s `audio_score` is `null` either way.
+
+- **Transcription** (`kavach/transcribe.py`): lazy-loads a faster-whisper
+  (CTranslate2) model on first use — importing the module never touches
+  disk/network. `faster-whisper` **is** a hard dependency (unlike
+  `onnxruntime`) since `/analyze/recording` needs it to function at all.
 
 - **Fusion** (`kavach/fusion.py`): `risk_score` is a **noisy-OR** combination
   of whichever of {text, signature, audio} are available —
@@ -148,3 +204,11 @@ pytest -v
 exercises the real joblib model end-to-end and is skipped automatically if
 `models/text_baseline.joblib` isn't present (e.g. before running
 `training/text/train_baseline.py`).
+
+`tests/test_recording.py::test_analyze_recording_transcribes_and_flags_scam_wav`
+is marked `@pytest.mark.slow` (real Whisper transcription, downloads the
+model on first run). It synthesizes its own fixture — a real spoken WAV
+generated via Windows' built-in `System.Speech` TTS through PowerShell — so
+no binary audio fixture is checked into the repo. It skips gracefully
+(instead of failing) if `faster-whisper` isn't installed or PowerShell/TTS
+isn't available (e.g. non-Windows CI).
