@@ -1,0 +1,127 @@
+.live-guard {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.live-guard__controls {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.live-guard__lang-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.live-guard__lang-label select {
+  background: var(--bg-card);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.4rem 0.6rem;
+}
+
+.live-guard__btn {
+  border: none;
+  border-radius: 999px;
+  padding: 0.6rem 1.4rem;
+  font-weight: 700;
+  font-size: 0.95rem;
+  transition: filter 0.2s ease;
+}
+
+.live-guard__btn:hover {
+  filter: brightness(1.1);
+}
+
+.live-guard__btn--start {
+  background: var(--color-low);
+  color: #052e16;
+}
+
+.live-guard__btn--stop {
+  background: var(--color-high);
+  color: #2c0b0b;
+}
+
+.live-guard__rec-dot {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.85rem;
+  color: var(--color-high);
+  font-weight: 600;
+}
+
+.live-guard__rec-pulse {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--color-high);
+  animation: rec-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes rec-pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.3;
+  }
+}
+
+.live-guard__error {
+  color: var(--color-high);
+  font-size: 0.9rem;
+}
+
+.live-guard__transcript {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1rem 1.25rem;
+  text-align: left;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.live-guard__transcript-heading {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-secondary);
+  margin-bottom: 0.5rem;
+}
+
+.live-guard__transcript-text {
+  font-size: 1rem;
+  line-height: 1.6;
+}
+
+.live-guard__placeholder {
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
+.live-guard__interim {
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
+.live-guard--unsupported {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.5rem;
+}
+
+.live-guard__unsupported-notice {
+  color: var(--text-secondary);
+  line-height: 1.6;
+}

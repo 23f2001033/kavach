@@ -1,0 +1,28 @@
+.app {
+  display: flex;
+  flex-direction: column;
+  min-height: 100svh;
+  max-width: 960px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 0 1.25rem;
+}
+
+.app__main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  padding-bottom: 2.5rem;
+}
+
+.app--elderly {
+  max-width: 720px;
+}
+
+.app--elderly,
+.app--elderly button,
+.app--elderly select,
+.app--elderly textarea {
+  font-size: 1.35rem;
+}

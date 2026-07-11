@@ -1,0 +1,65 @@
+:root {
+  --bg: #0b1220;
+  --bg-elevated: #121b2d;
+  --bg-card: #17223a;
+  --border: #263150;
+  --text-primary: #e6ecf5;
+  --text-secondary: #9aa8c2;
+  --accent: #38bdf8;
+  --color-low: #22c55e;
+  --color-suspicious: #f59e0b;
+  --color-high: #ef4444;
+  --gauge-track: #263041;
+
+  color-scheme: dark;
+  font: 16px/1.5 system-ui, 'Segoe UI', Roboto, 'Noto Sans', sans-serif;
+  color: var(--text-primary);
+  background: var(--bg);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  min-height: 100svh;
+}
+
+#root {
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+}
+
+h1, h2, h3 {
+  color: var(--text-primary);
+  margin: 0;
+}
+
+p {
+  margin: 0;
+}
+
+button {
+  font: inherit;
+  cursor: pointer;
+}
+
+textarea, select, input {
+  font: inherit;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}

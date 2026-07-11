@@ -1,0 +1,74 @@
+.risk-gauge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.risk-gauge__svg {
+  width: 100%;
+  max-width: 320px;
+}
+
+.risk-gauge--large .risk-gauge__svg {
+  max-width: 420px;
+}
+
+.risk-gauge__track {
+  fill: none;
+  stroke: var(--gauge-track, #263041);
+  stroke-width: 16;
+  stroke-linecap: round;
+}
+
+.risk-gauge__progress {
+  fill: none;
+  stroke-width: 16;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 0.6s cubic-bezier(0.22, 1, 0.36, 1), stroke 0.4s ease;
+}
+
+.risk-gauge__needle {
+  transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.risk-gauge__needle line {
+  stroke: var(--text-primary, #e6ecf5);
+  stroke-width: 3.5;
+  stroke-linecap: round;
+}
+
+.risk-gauge__needle circle {
+  fill: var(--text-primary, #e6ecf5);
+}
+
+.risk-gauge__readout {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: -2.2rem;
+  transform: translateY(-2rem);
+}
+
+.risk-gauge__score {
+  font-size: 2.6rem;
+  font-weight: 700;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  transition: color 0.4s ease;
+}
+
+.risk-gauge--large .risk-gauge__score {
+  font-size: 3.6rem;
+}
+
+.risk-gauge__label {
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  transition: color 0.4s ease;
+}
+
+.risk-gauge--large .risk-gauge__label {
+  font-size: 1.4rem;
+}

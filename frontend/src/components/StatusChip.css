@@ -1,0 +1,37 @@
+.status-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 0.35rem 0.75rem;
+  border-radius: 999px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.status-chip__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+  flex-shrink: 0;
+}
+
+.status-chip--pending {
+  color: var(--text-secondary);
+}
+
+.status-chip--ok {
+  color: var(--color-low);
+}
+
+.status-chip--partial {
+  color: var(--color-suspicious);
+}
+
+.status-chip--down {
+  color: var(--color-high);
+}
