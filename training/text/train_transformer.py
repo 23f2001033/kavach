@@ -23,7 +23,12 @@ import json
 import sys
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parent.parent.parent
+# __file__ is undefined when this code is pasted into a notebook cell; fall back
+# to the current working directory (assumed to be the repo root in that case).
+try:
+    ROOT = Path(__file__).resolve().parent.parent.parent
+except NameError:
+    ROOT = Path.cwd()
 DATA_DIR_DEFAULT = ROOT / "data" / "processed"
 OUTPUT_DIR_DEFAULT = ROOT / "training" / "text" / "output" / "distilbert"
 
