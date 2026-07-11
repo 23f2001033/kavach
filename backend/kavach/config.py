@@ -26,13 +26,22 @@ GEMINI_MODEL_NAME = os.environ.get("KAVACH_GEMINI_MODEL", "gemini-1.5-flash")
 GEMINI_TIMEOUT_SECONDS = float(os.environ.get("KAVACH_GEMINI_TIMEOUT_SECONDS", "4.0"))
 
 # --- fusion weights ------------------------------------------------------------
-# risk_score = weighted average of whichever of {text, signature, audio} scores
-# are actually available (None-signals are dropped and the rest renormalized —
-# see kavach/fusion.py). Signature score is always available (0 if no hits).
+# Noisy-OR evidence combination (see kavach/fusion.py):
+#   risk_score = 1 - PRODUCT_i (1 - s_i * w_i)
+# over whichever of {text, signature, audio} are actually AVAILABLE this
+# request. A signal that is None (model not loaded, no audio yet, ...) is
+# simply excluded from the product -- there is no renormalization, so an
+# absent signal can never dilute the ones that ARE present. Each w_i below is
+# a per-signal weight/cap: it discounts how much a single fully-confident
+# reading of that channel alone can contribute. text=1.0 means a maximally
+# confident text_score alone maps straight through to risk_score (no
+# structural ceiling). signature=0.85 discounts the regex engine slightly
+# since it is noisier/coarser than a learned score. audio=0.9 is a
+# placeholder for when the ONNX voice model ships.
 FUSION_WEIGHTS = {
-    "text": float(os.environ.get("KAVACH_W_TEXT", "0.5")),
-    "signature": float(os.environ.get("KAVACH_W_SIGNATURE", "0.35")),
-    "audio": float(os.environ.get("KAVACH_W_AUDIO", "0.15")),
+    "text": float(os.environ.get("KAVACH_W_TEXT", "1.0")),
+    "signature": float(os.environ.get("KAVACH_W_SIGNATURE", "0.85")),
+    "audio": float(os.environ.get("KAVACH_W_AUDIO", "0.9")),
 }
 
 # Per-hit severity -> contribution to the signature sub-score (1=low, 2=medium,

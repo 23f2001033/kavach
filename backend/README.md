@@ -110,15 +110,25 @@ for a live-call demo but means this is not a durable store.
   it (or without `models/kavach_audio.onnx`), `.score()` always returns
   `None` and fusion degrades gracefully.
 
-- **Fusion** (`kavach/fusion.py`): `risk_score` is a weighted average of
-  whichever of {text, signature, audio} are available — `None` signals are
-  dropped and the remaining weights renormalized, so a missing model never
-  crashes the service or silently zeroes out risk. The signature sub-score is
-  a severity-weighted sum of hits, saturating at 1.0 so many low-severity
-  hits can't run away unboundedly. `HysteresisMeter` is a small stateful
-  class (one per session in `/analyze/window`) that only changes level once a
-  score clears the threshold **plus a margin**, in the direction of travel —
-  this is what stops the on-screen risk meter flickering near a boundary.
+- **Fusion** (`kavach/fusion.py`): `risk_score` is a **noisy-OR** combination
+  of whichever of {text, signature, audio} are available —
+  `risk_score = 1 - PRODUCT(1 - s_i * w_i)` over the signals present this
+  request. A `None` signal is simply excluded from the product (no
+  renormalization), so a missing model never crashes the service, never
+  zeroes out risk, and — critically — never *dilutes* the signals that ARE
+  present. With `text` weighted at 1.0, a text-only reading maps straight
+  through (`risk_score == text_score`) and can reach "high" on its own; each
+  additional nonzero signal (signature hits, audio) can only push
+  `risk_score` up further, never down. (An earlier weighted-average
+  combiner renormalized over active weights, which meant an always-active
+  0.0 signature sub-score capped every text-only reading at ~0.588 — see
+  `evals/REPORT.md` for the full writeup of that bug and the fix.) The
+  signature sub-score is a severity-weighted sum of hits, saturating at 1.0
+  so many low-severity hits can't run away unboundedly. `HysteresisMeter` is
+  a small stateful class (one per session in `/analyze/window`) that only
+  changes level once a score clears the threshold **plus a margin**, in the
+  direction of travel — this is what stops the on-screen risk meter
+  flickering near a boundary.
 
 - **Explainer** (`kavach/explain.py`): rule-based composer is authoritative;
   it lists the plain-language explanation of each matched signature, ordered

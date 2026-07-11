@@ -16,6 +16,8 @@ def test_combine_all_none_degrades_to_zero_risk():
     result = combine(text_score=None, signature_hits=None, audio_score=None)
     assert result["risk_score"] == 0.0
     assert result["risk_level"] == "low"
+    # Empty `components` doubles as the "no signals seen at all" flag.
+    assert result["components"] == {}
 
 
 def test_combine_handles_missing_text_and_audio():
@@ -42,6 +44,73 @@ def test_combine_monotonic_in_signature_hits():
     r2 = combine(text_score=0.1, signature_hits=[LOW_HIT, MED_HIT])
     r3 = combine(text_score=0.1, signature_hits=[LOW_HIT, MED_HIT, HIGH_HIT])
     assert r0["risk_score"] <= r1["risk_score"] <= r2["risk_score"] <= r3["risk_score"]
+
+
+def test_combine_monotonic_in_audio_score():
+    scores = []
+    for a in [0.0, 0.2, 0.4, 0.6, 0.8, 1.0]:
+        result = combine(text_score=0.1, signature_hits=[], audio_score=a)
+        scores.append(result["risk_score"])
+    assert scores == sorted(scores), "risk_score must not decrease as audio_score increases"
+    assert scores[0] < scores[-1]
+
+
+# ---------------------------------------------------- noisy-OR properties
+def test_combine_text_only_equals_text_score():
+    """Property (a): with ONLY text available (no signature hits, no audio),
+    risk_score must equal text_score exactly -- no dilution. This only holds
+    because config.FUSION_WEIGHTS['text'] defaults to 1.0; if that default
+    ever changes this test should be revisited alongside it."""
+    assert config.FUSION_WEIGHTS["text"] == 1.0
+    for t in [0.0, 0.1, 0.37, 0.588, 0.65, 0.9, 1.0]:
+        result = combine(text_score=t, signature_hits=[], audio_score=None)
+        assert result["risk_score"] == pytest.approx(t)
+
+
+def test_combine_text_alone_can_reach_high():
+    """Regression test for the dilution bug: a confident text_score alone
+    (no signature hits, no audio) must be able to clear the 'high' threshold.
+    Under the old weighted-average combiner this was structurally impossible
+    (capped at ~0.588) no matter how confident the text model was."""
+    result = combine(text_score=1.0, signature_hits=[], audio_score=None)
+    assert result["risk_score"] == pytest.approx(1.0)
+    assert result["risk_level"] == "high"
+
+    result = combine(text_score=0.9, signature_hits=[], audio_score=None)
+    assert result["risk_level"] == "high"
+
+
+def test_combine_adding_nonzero_signature_strictly_increases_risk():
+    """Property (b): adding any nonzero second signal must strictly increase
+    risk_score relative to text alone (as long as the text-only score isn't
+    already saturated at 1.0)."""
+    text_only = combine(text_score=0.5, signature_hits=[], audio_score=None)
+    with_sig = combine(text_score=0.5, signature_hits=[LOW_HIT], audio_score=None)
+    assert with_sig["risk_score"] > text_only["risk_score"]
+
+
+def test_combine_adding_nonzero_audio_strictly_increases_risk():
+    text_only = combine(text_score=0.5, signature_hits=[], audio_score=None)
+    with_audio = combine(text_score=0.5, signature_hits=[], audio_score=0.3)
+    assert with_audio["risk_score"] > text_only["risk_score"]
+
+
+def test_combine_noisy_or_formula_matches_hand_computation():
+    """Pin the exact noisy-OR arithmetic so a future refactor can't silently
+    drift back toward an averaging scheme."""
+    w = config.FUSION_WEIGHTS
+    text_score, audio_score = 0.6, 0.4
+    hits = [HIGH_HIT, MED_HIT]  # severities 3, 2 -> 0.35 + 0.22 = 0.57
+    sig_score = signature_subscore(hits)
+    assert sig_score == pytest.approx(0.57)
+
+    expected = 1.0 - (
+        (1.0 - text_score * w["text"])
+        * (1.0 - sig_score * w["signature"])
+        * (1.0 - audio_score * w["audio"])
+    )
+    result = combine(text_score=text_score, signature_hits=hits, audio_score=audio_score)
+    assert result["risk_score"] == pytest.approx(expected)
 
 
 def test_signature_subscore_saturates():

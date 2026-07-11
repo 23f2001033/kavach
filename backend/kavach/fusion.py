@@ -34,33 +34,53 @@ def combine(
     weights: Optional[dict] = None,
 ) -> Dict:
     """Fuse text / signature / audio signals into a single risk_score in
-    [0, 1] plus a one-shot risk_level.
+    [0, 1] plus a one-shot risk_level, via noisy-OR evidence combination:
 
-    Degrades gracefully: any signal that is None (model not loaded, no audio
-    chunk yet, ...) is simply dropped and the remaining weights renormalized,
-    so the service never crashes or silently zeroes out risk just because one
-    modality is unavailable. The signature sub-score is always available
-    (0.0 if there are no hits) so there is always at least one active signal.
+        risk_score = 1 - PRODUCT_i (1 - s_i * w_i)
+
+    over whichever signals i are actually AVAILABLE this request (a None
+    signal is simply excluded from the product -- there is no
+    renormalization over the rest). Each s_i is first mapped into [0, 1]
+    (text_score used as-is; signature evidence via the severity-weighted
+    saturating signature_subscore(); audio used as-is), and w_i is a
+    per-signal weight/cap from config.FUSION_WEIGHTS.
+
+    This replaces an earlier weighted-average combiner that renormalized
+    over active weights. That structurally diluted the text signal: because
+    the signature sub-score was always "active" (0.0 when there were no
+    hits) and no audio model is shipped yet, every real request renormalized
+    over just {text, signature}, capping risk_score at ~0.588 * text_score
+    regardless of how confident the text model was -- below the 'high'
+    threshold no matter what. Noisy-OR fixes this structurally:
+      - with only text available, risk_score == text_score exactly (weights
+        ['text'] defaults to 1.0 -- see test_combine_text_only_equals_text_score).
+      - every additional nonzero signal can only raise risk_score (each
+        product factor is <= 1), never lower it or dilute what's there.
+      - risk_score is monotonic non-decreasing in each individual input.
+      - if no signal is available at all, the product is empty (== 1) so
+        risk_score == 0.0; `components` is also empty, which callers can use
+        as the "no signals seen yet" flag.
     """
     signature_hits = signature_hits or []
     weights = weights or config.FUSION_WEIGHTS
     sig_score = signature_subscore(signature_hits)
 
-    components = {"signature": sig_score}
-    active_weights = {"signature": weights["signature"]}
-    if text_score is not None:
-        components["text"] = max(0.0, min(1.0, text_score))
-        active_weights["text"] = weights["text"]
-    if audio_score is not None:
-        components["audio"] = max(0.0, min(1.0, audio_score))
-        active_weights["audio"] = weights["audio"]
+    components: Dict[str, float] = {}
+    survival = 1.0  # running PRODUCT_i (1 - s_i * w_i)
 
-    total_weight = sum(active_weights.values())
-    if total_weight <= 0:
-        risk_score = sig_score
-    else:
-        risk_score = sum(components[k] * active_weights[k] for k in active_weights) / total_weight
-    risk_score = max(0.0, min(1.0, risk_score))
+    if text_score is not None:
+        t = max(0.0, min(1.0, text_score))
+        components["text"] = t
+        survival *= 1.0 - max(0.0, min(1.0, t * weights["text"]))
+    if signature_hits:
+        components["signature"] = sig_score
+        survival *= 1.0 - max(0.0, min(1.0, sig_score * weights["signature"]))
+    if audio_score is not None:
+        a = max(0.0, min(1.0, audio_score))
+        components["audio"] = a
+        survival *= 1.0 - max(0.0, min(1.0, a * weights["audio"]))
+
+    risk_score = max(0.0, min(1.0, 1.0 - survival))
 
     return {
         "risk_score": risk_score,
