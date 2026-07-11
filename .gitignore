@@ -18,5 +18,6 @@ data/processed/*.jsonl
 *.flac
 .ipynb_checkpoints/
 models/*.joblib
+models/distilbert/
 training/text/output/
 training/audio/output/

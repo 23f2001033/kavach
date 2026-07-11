@@ -8,6 +8,12 @@
 # intentionally not required here — it's an optional enhancement guarded
 # behind GEMINI_API_KEY and imported lazily in kavach/explain.py; install it
 # yourself if you want it.
+#
+# torch/transformers back the preferred DistilBertScorer (kavach/text_model.py)
+# once models/distilbert/model exists (fetched separately, gitignored -- see
+# training/text/train_transformer.py). Import-guarded like onnxruntime: the
+# service still starts and falls back to the TF-IDF+LogReg baseline (or no
+# text scoring at all) if these aren't installed.
 
 fastapi>=0.110
 uvicorn[standard]>=0.29
@@ -19,3 +25,5 @@ pytest>=8.0
 httpx>=0.27
 python-multipart>=0.0.9
 faster-whisper>=1.0
+torch>=2.2
+transformers>=4.40

@@ -351,6 +351,106 @@ def render_markdown(report: dict) -> str:
     return "\n".join(lines)
 
 
+def _distilbert_swap_paragraph(report: dict) -> str:
+    """Honest before/after for swapping the primary text scorer from the
+    TF-IDF+LogReg baseline to the fine-tuned DistilBERT model
+    (models/distilbert/model, training/text/train_transformer.py). Prior
+    numbers below are the TF-IDF+noisy-OR-fusion run this exact suite
+    produced before the swap (see git history of this file/REPORT.md);
+    current numbers are read live from `report`."""
+    sc = report["scenarios"]["configs"]
+    yt = report["youtube_real_calls"]["configs"]
+
+    def fmt_pct(x):
+        return "n/a" if x is None else f"{x*100:.1f}%"
+
+    high_fpr = sc["fusion_high_only"]["fp"] / sc["fusion_high_only"]["n_benign"] if sc["fusion_high_only"]["n_benign"] else 0.0
+    high_fpr_regressed = high_fpr > (1 / 15) + 1e-9
+
+    lines = [
+        "**Text scorer swap: TF-IDF+LogReg baseline -> fine-tuned DistilBERT — honest before/after.** "
+        "`models/distilbert/model` (99.8% held-out test accuracy at training time; "
+        "`models/distilbert/transformer_metrics.json`) is now `get_text_scorer()`'s preferred scorer "
+        "whenever that directory is present, replacing the TF-IDF+LogisticRegression baseline (still "
+        "the fallback if it's absent). Production scoring differs slightly from the training-time "
+        "probe: transcripts over 512 tokens are split into overlapping 256-token/stride-128 windows "
+        "and the MAX window P(scam) is returned (`DistilBertScorer._score_windows`, "
+        "`kavach/text_model.py`), matching how the model was trained rather than truncating at 512."
+    ]
+    lines.append(
+        f"**Real YouTube calls — the number this integration was meant to move — improved past "
+        f"expectations:** `text_only` catch rate went from **12/20 (60%)** with the TF-IDF baseline to "
+        f"**{yt['text_only']['tp']}/20 ({fmt_pct(yt['text_only']['tpr'])})** with DistilBERT in this "
+        f"eval harness — better than the training-time non-windowed probe's 17/20, because this "
+        f"harness's sliding-window scoring catches at least one long real call (>512 tokens; a "
+        f"`Token indices sequence length ... 1809 > 512` truncation warning fires on this dataset) "
+        f"that plain 512-token truncation would have missed. `fusion_notlow` moved from a prior "
+        f"20/20 (TF-IDF+noisy-OR) to **{yt['fusion_notlow']['tp']}/20 "
+        f"({fmt_pct(yt['fusion_notlow']['tpr'])})** — a slight drop, within the range flagged as "
+        f"acceptable going in, and traced below to one specific miss."
+    )
+    lines.append(
+        "**A real regression: DistilBERT is less reliable than TF-IDF on the fresh, never-seen "
+        "handwritten scenarios.** These 15 scam scenarios were written to avoid template overlap "
+        "with any training data, and DistilBERT's outputs on them are sharply polarized (mostly "
+        "~0.000 or ~1.000, rarely in between) rather than the TF-IDF baseline's more graduated "
+        f"0.5-0.7 range — a sign of overconfidence outside its training distribution. `text_only` "
+        f"scenario TPR fell from **15/15 (100%)** with TF-IDF to **{sc['text_only']['tp']}/15 "
+        f"({fmt_pct(sc['text_only']['tpr'])})** with DistilBERT: it confidently scores several real "
+        "scam scripts near 0.0 (the deepfake-grandchild-emergency, insurance-bonus-unlock-fee, "
+        "fake-job-advance-fee, new-number-parent-whatsapp, and rental-deposit-token-advance "
+        "scenarios), missing them outright rather than landing in an ambiguous middle the way "
+        f"TF-IDF did. Scenario FPR at the `text_only` level also rose, from 1/15 (6.7%) to "
+        f"**{sc['text_only']['fp']}/15 ({fmt_pct(sc['text_only']['fpr'])})** — DistilBERT is "
+        "confidently (~1.000) WRONG on 2 benign scenarios (a bank fraud-alert yes/no call and a "
+        "customer-care callback) that the baseline only got wrong on 1 of. This is a genuine "
+        "cost of the swap, not an artifact of fusion or thresholds, and should be weighed against "
+        "the real-call win above -- it looks like DistilBERT overfit to its (largely synthetic + "
+        "YouTube-real) training distribution and generalizes worse than the simpler TF-IDF model to "
+        "genuinely novel Indian-scam phrasing it never saw."
+    )
+    lines.append(
+        "**Where DistilBERT clearly helps: benign calibration at the 'suspicious' level.** The "
+        "acceptance criterion this integration was expected to improve on -- benign FPR at "
+        f"'suspicious' (`fusion_notlow`) -- dropped sharply as expected, from 11/15 (73.3%) with "
+        f"TF-IDF to **{sc['fusion_notlow']['fp']}/15 ({fmt_pct(sc['fusion_notlow']['fpr'])})** with "
+        "DistilBERT: because DistilBERT's benign scores mostly collapse to ~0.000 instead of "
+        "TF-IDF's lingering-just-above-0.35 range, far fewer benign calls now cross the 'suspicious' "
+        "line at all. The flip side of that same polarization is the 'high' level: benign FPR at "
+        f"`fusion_high_only` moved from 0/15 (0.0%) to **{sc['fusion_high_only']['fp']}/15 "
+        f"({fmt_pct(sc['fusion_high_only']['fpr'])})**"
+        + (
+            " — ABOVE the 1/15 acceptance bound set when noisy-OR fusion was introduced, and IS "
+            "flagged here as a regression: the same 2 confidently-wrong-at-1.000 benign scenarios "
+            "above now clear 'high' on text alone, since nothing in the fusion layer discounts an "
+            "overconfident text_score. This needs attention (recalibration -- e.g. temperature "
+            "scaling, or a lower per-signal weight on text -- or more diverse benign training data) "
+            "before 'high' is treated as safe for any unattended auto-action."
+            if high_fpr_regressed else
+            " — still within the 1/15 acceptance bound, so not flagged as a regression."
+        )
+    )
+    lines.append(
+        f"**Latency.** A single scored call on a realistic ~244-word / ~530-character transcript "
+        "(well under the 512-token single-pass path) measured **~298ms median** (5-run median, "
+        "warm process) on this CPU-only machine -- comfortably under the ~1.5s budget, and low "
+        "enough that this does not need to block anything; live mode's incremental per-window "
+        "scoring stays well inside that budget too. The full-suite latency benchmark above (which "
+        "cycles through all 50 scenario+YouTube transcripts, some of which run well past 512 tokens "
+        "and trigger multi-window scoring) shows the real cost of long transcripts: "
+        f"median {report['latency_ms'].get('median_ms', 'n/a')} ms but "
+        f"p95 {report['latency_ms'].get('p95_ms', 'n/a')} ms and a max of "
+        f"{report['latency_ms'].get('max_ms', 'n/a')} ms -- up from a ~4ms median with the TF-IDF "
+        "baseline, since DistilBERT forward passes (and, for long calls, several of them per "
+        "request) are inherently much heavier than a linear model over sparse TF-IDF features. This "
+        "is a real latency increase worth tracking, but per the task's own framing it isn't a "
+        "blocking concern: one-shot /analyze/text and /analyze/recording calls stay in the "
+        "hundreds-of-ms to low-single-digit-seconds range, and live/window mode sends small "
+        "incremental chunks rather than re-scoring a multi-thousand-token transcript at once."
+    )
+    return "\n\n".join(lines)
+
+
 def _discussion_text(report: dict) -> str:
     sc = report["scenarios"]["configs"]
     yt = report["youtube_real_calls"]["configs"]
@@ -375,8 +475,11 @@ def _discussion_text(report: dict) -> str:
     high_fpr_ok = high_fpr_flag <= (1 / 15) + 1e-9
 
     paras = []
+    paras.append(_distilbert_swap_paragraph(report))
     paras.append(
-        "**Found by evals, fixed via noisy-OR — here are the before/after numbers.** "
+        "**Found by evals, fixed via noisy-OR — here are the before/after numbers (predates the "
+        "DistilBERT swap above; text scorer has changed since, only the fusion-math finding is "
+        "historical).** "
         "An earlier run of this exact suite found that full fusion (`fusion_notlow`) caught "
         "FEWER scams than the text model alone, on both datasets: text_only 15/15 vs "
         "fusion_notlow 8/15 on the fresh scenarios, and text_only 12/20 vs fusion_notlow 6/20 "

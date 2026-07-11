@@ -18,6 +18,16 @@ MODELS_DIR = Path(os.environ.get(ENV_MODELS_DIR, str(REPO_ROOT / "models")))
 TEXT_MODEL_PATH = MODELS_DIR / "text_baseline.joblib"
 AUDIO_MODEL_PATH = MODELS_DIR / "kavach_audio.onnx"
 
+# Fine-tuned DistilBERT text scorer (training/text/train_transformer.py). When
+# this directory exists (config.json + model.safetensors + tokenizer files),
+# it is preferred over the TF-IDF+LogReg baseline -- see
+# kavach/text_model.py::get_text_scorer(). Not committed to git (see
+# .gitignore); fetched separately from Kaggle training output.
+DISTILBERT_MODEL_DIR = MODELS_DIR / "distilbert" / "model"
+DISTILBERT_MAX_LENGTH = int(os.environ.get("KAVACH_DISTILBERT_MAX_LENGTH", "512"))
+DISTILBERT_WINDOW_SIZE = int(os.environ.get("KAVACH_DISTILBERT_WINDOW_SIZE", "256"))
+DISTILBERT_WINDOW_STRIDE = int(os.environ.get("KAVACH_DISTILBERT_WINDOW_STRIDE", "128"))
+
 # --- optional LLM explainer polish -------------------------------------------
 # Core detection/explanation NEVER depends on this (see README design principle).
 ENV_GEMINI_API_KEY = "GEMINI_API_KEY"

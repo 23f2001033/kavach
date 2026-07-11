@@ -11,10 +11,12 @@ from fastapi.testclient import TestClient
 
 from kavach import config
 from kavach.api import app, _session_store
+from kavach.text_model import get_text_scorer
 
 client = TestClient(app)
 
-MODEL_PRESENT = config.TEXT_MODEL_PATH.exists()
+MODEL_PRESENT = config.TEXT_MODEL_PATH.exists() or config.DISTILBERT_MODEL_DIR.exists()
+EXPECTED_TEXT_SCORER_NAME = get_text_scorer().name if get_text_scorer().is_loaded else False
 
 DIGITAL_ARREST_TRANSCRIPT = (
     "Caller: This is Inspector Rathore calling from Mumbai Police cyber cell. "
@@ -44,7 +46,10 @@ def test_health_reports_model_status():
     assert resp.status_code == 200
     body = resp.json()
     assert body["status"] == "ok"
-    assert body["models"]["text"] is MODEL_PRESENT
+    # Backward-compatible: truthy iff a text scorer loaded, exact name otherwise
+    # ("distilbert" preferred, "baseline" fallback, False if neither is present).
+    assert bool(body["models"]["text"]) is MODEL_PRESENT
+    assert body["models"]["text"] == EXPECTED_TEXT_SCORER_NAME
     assert body["models"]["audio"] is False  # no ONNX audio model shipped yet
 
 

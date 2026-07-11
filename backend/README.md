@@ -4,12 +4,12 @@ FastAPI inference service: signature rule engine, text scam-likelihood scorer,
 fusion + hysteresis, and a rule-based (optionally LLM-polished) explainer.
 
 **Design principle:** the core detection path works fully offline. No external
-API is required — the TF-IDF+LogisticRegression text model and the regex
-signature engine run entirely locally, and the explainer's rule-based composer
-always works. An LLM (Gemini) can *optionally* polish the wording of the
-explanation if `GEMINI_API_KEY` is set in the environment; on any failure
-(missing key, no network, timeout, bad response) it silently falls back to the
-rule-based text. Detection/risk scoring never depends on the LLM at all.
+API is required — the text model(s) and the regex signature engine run
+entirely locally, and the explainer's rule-based composer always works. An LLM
+(Gemini) can *optionally* polish the wording of the explanation if
+`GEMINI_API_KEY` is set in the environment; on any failure (missing key, no
+network, timeout, bad response) it silently falls back to the rule-based text.
+Detection/risk scoring never depends on the LLM at all.
 
 ## Run it
 
@@ -19,17 +19,24 @@ pip install -r requirements.txt
 uvicorn main:app --reload --port 8000
 ```
 
-The text model is loaded from `../models/text_baseline.joblib` (produced by
-`training/text/train_baseline.py`). If it's missing, the service still starts:
-`/health` reports `models.text: false`, `text_score` in responses is `null`,
-and risk falls back to signature-only detection — it never crashes.
+The text scorer prefers the fine-tuned DistilBERT model at
+`../models/distilbert/model` (produced by `training/text/train_transformer.py`,
+fetched separately — see "Text model" below) and falls back to
+`../models/text_baseline.joblib` (produced by `training/text/train_baseline.py`)
+if that directory doesn't exist. If neither is present, the service still
+starts: `/health` reports `models.text: false`, `text_score` in responses is
+`null`, and risk falls back to signature-only detection — it never crashes.
 
 ## Endpoints
 
 ### `GET /health`
 ```json
-{"status": "ok", "models": {"text": true, "audio": false}}
+{"status": "ok", "models": {"text": "distilbert", "audio": false}}
 ```
+`models.text` is `"distilbert"` or `"baseline"` depending on which text
+scorer loaded, or `false` if neither did (still truthy in the "some model
+loaded" case, for backward compatibility with clients checking for truthiness
+rather than an exact string).
 
 ### `POST /analyze/text`
 One-shot analysis of a full transcript (speakers as `"Caller: ... Receiver: ..."`).
@@ -139,14 +146,34 @@ installed, the endpoint returns `503` instead of crashing.
   classifier, not more regex. The fusion layer is tuned so no single signature
   hit can push a benign call to "high" on its own.
 
-- **Text model** (`kavach/text_model.py`): loads `models/text_baseline.joblib`,
-  which `training/text/train_baseline.py` saves as
-  `{"vectorizer": FeatureUnion, "clf": LogisticRegression, "best_C": float}` —
-  **not** a single sklearn `Pipeline`. `TfidfLogRegScorer` handles that shape
-  directly (and falls back to treating the artifact as a plain
-  `predict_proba`-capable estimator/Pipeline if a future export changes
-  shape). `BaseTextScorer` is a small ABC so a future ONNX DistilBERT model
-  can be dropped in as a second implementation without touching callers.
+- **Text model** (`kavach/text_model.py`): `BaseTextScorer` is a small ABC with
+  two implementations, selected by `get_text_scorer()`:
+  - `DistilBertScorer` (preferred): loads the fine-tuned
+    distilbert-base-uncased classifier from `models/distilbert/model`
+    (`config.json` + `model.safetensors` + tokenizer files), produced by
+    `training/text/train_transformer.py --windowed` and fetched separately
+    from Kaggle (not committed — see `.gitignore`). Trained metrics
+    (`models/distilbert/transformer_metrics.json`, also gitignored): 99.8%
+    test accuracy; 17/20 real held-out YouTube scam calls caught at threshold
+    0.5 with very confident probabilities (~0.999), vs. the TF-IDF baseline's
+    12/20. Transcripts whose full token encoding fits in 512 tokens are
+    scored in one pass; longer ones are split into overlapping 256-token
+    windows (stride 128, matching training) and the MAX window P(scam) is
+    returned, so a scam signal anywhere in a long call drives the score.
+    Import-guarded (`torch`/`transformers`) and directory-guarded like the
+    audio model — missing either just disables it and falls through to the
+    baseline.
+  - `TfidfLogRegScorer` (fallback): loads `models/text_baseline.joblib`,
+    which `training/text/train_baseline.py` saves as
+    `{"vectorizer": FeatureUnion, "clf": LogisticRegression, "best_C": float}`
+    — **not** a single sklearn `Pipeline`. `TfidfLogRegScorer` handles that
+    shape directly (and falls back to treating the artifact as a plain
+    `predict_proba`-capable estimator/Pipeline if a future export changes
+    shape).
+
+  Both degrade gracefully to `score() -> None` / `is_loaded == False` if
+  their artifact is missing or fails to load — the rest of the service
+  (signatures + fusion) keeps working either way.
 
 - **Audio model** (`kavach/audio_model.py`): stub interface for the
   voice-deepfake ONNX model being trained separately. `onnxruntime` is

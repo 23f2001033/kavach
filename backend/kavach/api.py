@@ -146,10 +146,15 @@ def _analyze(transcript: str, meter: Optional[HysteresisMeter] = None) -> Analyz
 
 @app.get("/health")
 def health() -> Dict:
+    text_scorer = get_text_scorer()
     return {
         "status": "ok",
         "models": {
-            "text": get_text_scorer().is_loaded,
+            # Backward-compatible: falsy (False) when nothing loaded, truthy
+            # when a scorer loaded -- now the scorer's name ("distilbert" |
+            # "baseline") instead of a bare bool, so clients can tell which
+            # text model is actually serving traffic.
+            "text": text_scorer.name if text_scorer.is_loaded else False,
             "audio": get_audio_scorer().is_loaded,
         },
     }
