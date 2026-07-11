@@ -275,6 +275,71 @@ def parse_itw(meta_path, audio_dir):
     return items
 
 
+def get_itw_items(root):
+    """Build In-the-Wild items from whatever layout this mirror uses.
+
+    Strategies, in order:
+      1. meta.csv found under root -> classic flat release layout.
+      2. wavs sorted into label-named folders (real/bona*/genuine vs fake/spoof) ->
+         labels come from the folder names (the bhaveshkumars Kaggle mirror does this:
+         release_in_the_wild/train/{real,fake}/*.wav).
+      3. repo-shipped data/in_the_wild/meta.csv + densest numeric-name wav dir.
+
+    Whatever the strategy, missing files are dropped with a warning and we fail fast
+    if nothing resolves — before any GPU time is spent."""
+    root = Path(root)
+    if not root.exists():
+        raise FileNotFoundError(f"--itw_root {root} does not exist")
+
+    items, how = [], None
+    meta_files = sorted(root.rglob("meta.csv"))
+    if meta_files:
+        items = parse_itw(meta_files[0], meta_files[0].parent)
+        how = f"meta.csv at {meta_files[0]}"
+    else:
+        bona_names = {"real", "bona-fide", "bonafide", "bona_fide", "genuine"}
+        spoof_names = {"fake", "spoof", "spoofed", "deepfake"}
+        by_dir = {}
+        for p in root.rglob("*.wav"):
+            by_dir.setdefault(p.parent, []).append(p)
+        labeled_dirs = {d: ps for d, ps in by_dir.items()
+                        if d.name.lower() in bona_names | spoof_names}
+        has_bona = any(d.name.lower() in bona_names for d in labeled_dirs)
+        has_spoof = any(d.name.lower() in spoof_names for d in labeled_dirs)
+        if has_bona and has_spoof:
+            for d, ps in labeled_dirs.items():
+                label = 0 if d.name.lower() in bona_names else 1
+                items.extend({"path": str(p), "label": label} for p in ps)
+            how = f"label-named folders under {root} ({sorted(d.name for d in labeled_dirs)})"
+        else:
+            repo_meta = ROOT / "data" / "in_the_wild" / "meta.csv"
+            numeric_dirs = {d: sum(1 for p in ps if p.stem.isdigit()) for d, ps in by_dir.items()}
+            if repo_meta.exists() and numeric_dirs:
+                audio_dir = max(numeric_dirs, key=numeric_dirs.get)
+                items = parse_itw(repo_meta, audio_dir)
+                how = f"repo meta.csv + wav dir {audio_dir}"
+
+    if not items:
+        found = sorted({p.name for p in root.rglob("*") if p.is_file()})
+        raise FileNotFoundError(
+            f"Could not resolve In-the-Wild items under {root}.\n"
+            f"File names found (up to 60): {found[:60]}"
+        )
+    existing = [it for it in items if Path(it["path"]).exists()]
+    dropped = len(items) - len(existing)
+    if dropped:
+        print(f"WARNING: dropping {dropped}/{len(items)} In-the-Wild items whose files are missing")
+    if not existing:
+        raise FileNotFoundError(
+            f"In-the-Wild resolved via {how}, but none of the referenced audio files exist. "
+            f"First expected path: {items[0]['path']}"
+        )
+    n_bona = sum(1 for it in existing if it["label"] == 0)
+    print(f"In-the-Wild via {how}: {len(existing)} files "
+          f"({n_bona} bona-fide / {len(existing) - n_bona} spoof)")
+    return existing
+
+
 def make_smoke_items(n, seed_offset, sample_rate, max_seconds):
     """Tiny in-memory synthetic dataset: random waveforms, alternating labels, already
     fixed-length so --smoke never touches soundfile/librosa or the network beyond HF Hub."""
@@ -526,9 +591,7 @@ def main():
         print(f"  train={len(train_items)} dev={len(dev_items)} eval={len(eval19_items)}")
 
         print(f"discovering In-the-Wild under {args.itw_root} ...")
-        meta_path, itw_audio_dir = discover_itw(args.itw_root)
-        itw_items = parse_itw(meta_path, itw_audio_dir)
-        print(f"  in-the-wild={len(itw_items)} (meta: {meta_path})")
+        itw_items = get_itw_items(args.itw_root)
 
     DatasetCls = make_dataset_class()
     train_ds = DatasetCls(train_items, max_seconds, train=True, seed=args.seed)
@@ -593,13 +656,26 @@ def main():
         model.load_state_dict(best_state)
     model.to(device)
 
+    # Never lose a trained model to an eval-set problem: save it first, then
+    # run each final eval independently, capturing failures in the metrics.
+    model_path = output_dir / "kavach_audio.pt"
+    torch.save(model.state_dict(), model_path)
+    print(f"saved model state_dict -> {model_path}")
+
+    def _safe_eval(name, loader):
+        try:
+            m = evaluate_split(model, loader, device)
+            print(name, m)
+            return m
+        except Exception as e:  # keep artifacts even if one eval set is broken
+            print(f"ERROR during {name} eval (continuing): {e!r}")
+            return {"error": repr(e)}
+
     print("final eval: ASVspoof2019 LA eval split")
-    eval19_metrics = evaluate_split(model, eval19_loader, device)
-    print(eval19_metrics)
+    eval19_metrics = _safe_eval("asvspoof19_eval", eval19_loader)
 
     print("final eval: In-the-Wild (cross-dataset headline)")
-    itw_metrics = evaluate_split(model, itw_loader, device)
-    print(itw_metrics)
+    itw_metrics = _safe_eval("in_the_wild", itw_loader)
 
     metrics = {
         "model": MODEL_NAME,
@@ -617,16 +693,17 @@ def main():
         json.dump(metrics, f, ensure_ascii=False, indent=2)
     print(f"saved metrics -> {metrics_path}")
 
-    model_path = output_dir / "kavach_audio.pt"
-    torch.save(model.state_dict(), model_path)
-    print(f"saved model state_dict -> {model_path}")
-
     export_onnx(model, output_dir, max_seconds)
+
+    def _fmt(m):
+        if "eer" in m:
+            return f"EER={m['eer']:.4f} AUC={m['roc_auc']:.4f}"
+        return f"FAILED: {m.get('error')}"
 
     print("\n=== SUMMARY ===")
     print(f"best dev EER: {best_eer:.4f}")
-    print(f"ASVspoof19 eval: EER={eval19_metrics['eer']:.4f} AUC={eval19_metrics['roc_auc']:.4f}")
-    print(f"In-the-Wild (cross-dataset): EER={itw_metrics['eer']:.4f} AUC={itw_metrics['roc_auc']:.4f}")
+    print(f"ASVspoof19 eval: {_fmt(eval19_metrics)}")
+    print(f"In-the-Wild (cross-dataset): {_fmt(itw_metrics)}")
     print(f"model saved to {model_path}")
 
 
