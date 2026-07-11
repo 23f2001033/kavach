@@ -32,6 +32,26 @@ frontend/        Web app: live mic mode, risk meter, explanations, elderly-frien
 evals/           Evaluation suites and the cross-dataset generalization report
 ```
 
+## Results so far
+
+Measured by our evaluation suite ([evals/REPORT.md](evals/REPORT.md)) on 30 fresh handwritten
+scenarios (never seen in training) and 20 **real** scam-call recordings held out from all training:
+
+| Configuration | Fresh scenarios TPR | Benign false "high" alarms | Real scam calls caught |
+|---|---|---|---|
+| Text model alone | 15/15 | 0/15 | 12/20 |
+| Signature rules alone | 2/15 | 0/15 | 4/20 |
+| **Full fusion (Kavach)** | **15/15** | **0/15** | **20/20** |
+
+Full analysis latency: **~5 ms median** on CPU — genuinely real-time.
+
+The eval suite also caught a real fusion-design flaw (weighted averaging diluted text evidence
+when the audio signal was absent) before any judge could — fixed with a noisy-OR evidence
+combination, before/after numbers preserved in the report. We publish honest failure modes,
+not just wins.
+
 ## Status
 
 🚧 Built for the [ML Empowerment Build Challenge 2.0](https://ml-empowerment-2.devpost.com/) — in active development, submission July 30, 2026.
+Pending: DistilBERT + wav2vec2 training runs on Kaggle free GPU (scripts smoke-tested, see
+`training/*/KAGGLE.md`), then trained-model integration and the demo video.
