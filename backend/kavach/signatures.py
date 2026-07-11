@@ -21,6 +21,15 @@ adversarial phrasing that mimics a safety warning while sneaking in a request
 could still slip past regexes; resolving that fully needs the learned text
 classifier (or later DistilBERT model), not more regex. The fusion layer's
 job is to make sure this signature alone can't push a benign call to "high".
+
+Two more benign-but-adjacent phrasings found via evals/ and fixed here (see
+_NOT_A_REQUEST and the "pin" lookahead in _SECRET_TERMS below): (1) "you do
+NOT need to share your PIN/OTP" — same safety-warning intent as the case
+above, but phrased with an imperative-looking verb ("share") that the
+original pattern didn't check for a preceding negation on; (2) "pin" alone is
+ambiguous in Indian English — "share a pin location" (a map pin) or "PIN
+code" (postal code) are extremely common and were previously misdetected as
+a UPI/security PIN request.
 """
 import re
 
@@ -30,10 +39,27 @@ SEVERITY_HIGH = 3
 
 # Shared term group for OTP/PIN/CVV-like secrets, incl. "six digit code" style
 # references some scammers use instead of saying "OTP" outright.
+#
+# "pin" is deliberately guarded with a negative lookahead: in Indian English
+# "pin" very commonly means a map pin ("share a pin location") or a postal PIN
+# code ("PIN code"), not a security PIN — without the lookahead, an entirely
+# benign "I can share a pin location" sentence matches the request-verb
+# pattern below and misfires (see test_signatures.py).
 _SECRET_TERMS = (
-    r"(?:otp|one[- ]time password|pin|cvv|card number|expiry date|"
+    r"(?:otp|one[- ]time password|pin(?!\s*(?:code|location))|cvv|card number|expiry date|"
     r"verification code|security code|"
     r"(?:\d{1,2}|two|three|four|five|six)[- ]?digit code)"
+)
+
+# Negation cues that can immediately precede the request-verb group below,
+# e.g. "you do not need to share your OTP" (a legitimate safety reminder) vs
+# "please share your OTP" (a request). Mirrors the OTP-safety-warning hard
+# case already documented above, just for the "share"/"give"/... verb forms
+# instead of "asks for". Each must be a fixed-width lookbehind (Python `re`
+# requires that), so common negated phrasings are listed individually.
+_NOT_A_REQUEST = (
+    r"(?<!not )(?<!never )(?<!don't )(?<!doesn't )(?<!won't )(?<!wouldn't )"
+    r"(?<!need to )(?<!needed to )(?<!needs to )(?<!no need to )"
 )
 
 SIGNATURES = [
@@ -43,7 +69,7 @@ SIGNATURES = [
         "scam_type": "bank_fraud",
         "severity": SEVERITY_HIGH,
         "patterns": [
-            rf"\b(?:share|tell me|read (?:me|out)|give me|send me|provide|confirm)\b[^.?!\n]{{0,25}}\b{_SECRET_TERMS}\b",
+            rf"{_NOT_A_REQUEST}\b(?:share|tell me|read (?:me|out)|give me|send me|provide|confirm)\b[^.?!\n]{{0,25}}\b{_SECRET_TERMS}\b",
             rf"\bwhat(?:'s| is)\s+(?:the|your)\s+{_SECRET_TERMS}\b",
             r"\botp\b[^.?!\n]{0,20}\bread it\b",
         ],

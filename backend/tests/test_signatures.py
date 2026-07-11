@@ -132,3 +132,42 @@ def test_benign_family_call_no_hits():
 def test_match_empty_transcript_returns_empty_list():
     assert match("") == []
     assert match(None) == []
+
+
+def test_benign_share_pin_location_does_not_flag_otp():
+    """'pin' alone is ambiguous in Indian English: a map pin ('share a pin
+    location') or a postal PIN code, not a security PIN. Found via evals/ as
+    a real false positive on a benign furniture-delivery call."""
+    transcript = (
+        "Caller: The gate is easier to find from the back lane, I can share a pin "
+        "location if that helps. Receiver: That would be great, please share it."
+    )
+    ids = _ids(match(transcript))
+    assert "otp_pin_cvv_request" not in ids
+
+
+def test_benign_pin_code_does_not_flag_otp():
+    transcript = "Receiver: Sure, my PIN code is 400001, that's the postal code for this area."
+    ids = _ids(match(transcript))
+    assert "otp_pin_cvv_request" not in ids
+
+
+def test_benign_do_not_need_to_share_otp_does_not_flag_request():
+    """Found via evals/ as a real false positive: a genuine bank fraud-alert
+    call explicitly reassures the customer they do NOT need to share their
+    OTP/PIN — same safety-warning intent as the 'never asks for your OTP'
+    hard case above, just phrased with 'share' instead of 'asks for'."""
+    transcript = (
+        "Caller: You do not need to share your card number, PIN, or any OTP "
+        "with me for this — I just needed your yes or no."
+    )
+    ids = _ids(match(transcript))
+    assert "otp_pin_cvv_request" not in ids
+
+
+def test_scam_share_otp_request_still_flags():
+    """Regression guard: the negation lookbehind must not swallow the
+    original, unambiguous scam case."""
+    transcript = "Caller: Please share your OTP and PIN right now so I can verify your account."
+    ids = _ids(match(transcript))
+    assert "otp_pin_cvv_request" in ids
