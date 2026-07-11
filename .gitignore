@@ -19,3 +19,4 @@ data/processed/*.jsonl
 .ipynb_checkpoints/
 models/*.joblib
 training/text/output/
+training/audio/output/
