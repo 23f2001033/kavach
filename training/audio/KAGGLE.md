@@ -1,4 +1,4 @@
-# Running `train_audio_deepfake.py` on Kaggle (free GPU)
+﻿# Running `train_audio_deepfake.py` on Kaggle (free GPU)
 
 `train_audio_deepfake.py` fine-tunes `facebook/wav2vec2-base` into a bonafide-vs-spoof
 (anti-spoofing) classifier on ASVspoof 2019 LA, then reports the honest cross-dataset
@@ -26,7 +26,7 @@ for the discovery rules, and the clear error it raises if the layout doesn't mat
 In the first notebook cell:
 
 ```bash
-!git clone https://github.com/<your-username>/<your-repo>.git kavach
+!git clone https://github.com/23f2001033/kavach.git kavach
 %cd kavach
 !pip install -q -U transformers soundfile librosa scikit-learn tqdm onnx
 ```
@@ -94,3 +94,4 @@ needed, runs on CPU in a couple of minutes:
 ```bash
 !python training/audio/train_audio_deepfake.py --smoke
 ```
+

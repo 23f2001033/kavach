@@ -1,4 +1,4 @@
-# Running `train_transformer.py` on Kaggle (free GPU)
+﻿# Running `train_transformer.py` on Kaggle (free GPU)
 
 `train_transformer.py` fine-tunes `distilbert-base-uncased` on the Kavach corpus. It needs
 a GPU and takes a few minutes per epoch on Kaggle's free T4 -- do not attempt this on a
@@ -27,7 +27,7 @@ repo via a GitHub personal access token if the hackathon repo is private.
 In the first notebook cell:
 
 ```bash
-!git clone https://github.com/<your-username>/<your-repo>.git kavach
+!git clone https://github.com/23f2001033/kavach.git kavach
 %cd kavach
 !pip install -q -U transformers datasets accelerate scikit-learn onnx
 ```
@@ -89,3 +89,4 @@ then use the **Data** -> **Output** download button, or `kaggle kernels output` 
 Kaggle CLI. Copy `model.onnx` into `models/` locally (gitignored) and
 `transformer_metrics.json` into `training/text/` if you want to commit it alongside
 `baseline_metrics.json`.
+
