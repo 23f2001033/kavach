@@ -208,21 +208,37 @@ def parse_asvspoof_protocol(protocol_path, flac_dir):
 
 
 def discover_itw(root):
-    """Locate In-the-Wild's meta.csv under `root` (Kaggle mount layout varies)."""
+    """Locate In-the-Wild's meta.csv under `root` (Kaggle mount layout varies).
+
+    Some Kaggle mirrors ship only the .wav files without meta.csv; the repo
+    carries a verified copy of the labels (data/in_the_wild/meta.csv, 31,779
+    rows) as a fallback — in that case the wav directory is located by density
+    of numeric .wav names (the release names files 0.wav..31778.wav)."""
     root = Path(root)
     if not root.exists():
         raise FileNotFoundError(f"--itw_root {root} does not exist")
     meta_files = sorted(root.rglob("meta.csv"))
-    if not meta_files:
-        found = sorted({p.name for p in root.rglob("*") if p.is_file()})
-        raise FileNotFoundError(
-            f"Could not find 'meta.csv' under {root}.\n"
-            f"File names found under --itw_root (up to 60): {found[:60]}\n"
-            "Expected the In-the-Wild release layout: meta.csv (columns file, speaker, "
-            "label) with .wav files in the same directory."
-        )
-    meta_path = meta_files[0]
-    return meta_path, meta_path.parent
+    if meta_files:
+        meta_path = meta_files[0]
+        return meta_path, meta_path.parent
+    repo_meta = ROOT / "data" / "in_the_wild" / "meta.csv"
+    if repo_meta.exists():
+        wav_dirs = {}
+        for p in root.rglob("*.wav"):
+            if p.stem.isdigit():
+                wav_dirs[p.parent] = wav_dirs.get(p.parent, 0) + 1
+        if wav_dirs:
+            audio_dir = max(wav_dirs, key=wav_dirs.get)
+            print(f"meta.csv not in --itw_root; using repo copy {repo_meta} "
+                  f"with wav dir {audio_dir} ({wav_dirs[audio_dir]} files)")
+            return repo_meta, audio_dir
+    found = sorted({p.name for p in root.rglob("*") if p.is_file()})
+    raise FileNotFoundError(
+        f"Could not find 'meta.csv' under {root} (and no usable repo fallback).\n"
+        f"File names found under --itw_root (up to 60): {found[:60]}\n"
+        "Expected the In-the-Wild release layout: meta.csv (columns file, speaker, "
+        "label) with .wav files in the same directory."
+    )
 
 
 def parse_itw(meta_path, audio_dir):
