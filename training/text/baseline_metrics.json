@@ -1,28 +1,28 @@
 {
   "model": "tfidf(word_1-2gram + char_3-5gram) + LogisticRegression",
-  "best_C": 0.03,
+  "best_C": 0.1,
   "c_grid_tuning_on_val": [
     {
       "C": 0.01,
-      "n": 623,
-      "accuracy": 0.9983948635634029,
-      "precision": 0.9966216216216216,
+      "n": 743,
+      "accuracy": 0.9986541049798116,
+      "precision": 0.9971910112359551,
       "recall": 1.0,
-      "f1": 0.9983079526226735,
+      "f1": 0.9985935302390999,
       "roc_auc": 1.0
     },
     {
       "C": 0.03,
-      "n": 623,
-      "accuracy": 1.0,
-      "precision": 1.0,
+      "n": 743,
+      "accuracy": 0.9986541049798116,
+      "precision": 0.9971910112359551,
       "recall": 1.0,
-      "f1": 1.0,
+      "f1": 0.9985935302390999,
       "roc_auc": 1.0
     },
     {
       "C": 0.1,
-      "n": 623,
+      "n": 743,
       "accuracy": 1.0,
       "precision": 1.0,
       "recall": 1.0,
@@ -31,7 +31,7 @@
     },
     {
       "C": 0.3,
-      "n": 623,
+      "n": 743,
       "accuracy": 1.0,
       "precision": 1.0,
       "recall": 1.0,
@@ -40,7 +40,7 @@
     },
     {
       "C": 1.0,
-      "n": 623,
+      "n": 743,
       "accuracy": 1.0,
       "precision": 1.0,
       "recall": 1.0,
@@ -49,7 +49,7 @@
     },
     {
       "C": 3.0,
-      "n": 623,
+      "n": 743,
       "accuracy": 1.0,
       "precision": 1.0,
       "recall": 1.0,
@@ -58,7 +58,7 @@
     },
     {
       "C": 10.0,
-      "n": 623,
+      "n": 743,
       "accuracy": 1.0,
       "precision": 1.0,
       "recall": 1.0,
@@ -71,11 +71,11 @@
     "char": 30000,
     "total": 60000
   },
-  "n_train": 4983,
-  "n_val": 623,
-  "n_test": 623,
+  "n_train": 5943,
+  "n_val": 743,
+  "n_test": 743,
   "test": {
-    "n": 623,
+    "n": 743,
     "accuracy": 1.0,
     "precision": 1.0,
     "recall": 1.0,
@@ -84,7 +84,7 @@
   },
   "test_by_source": {
     "kavach-india-synth": {
-      "n": 180,
+      "n": 300,
       "accuracy": 1.0,
       "precision": 1.0,
       "recall": 1.0,
@@ -102,127 +102,127 @@
   },
   "youtube_real_probe": {
     "n": 20,
-    "flagged_at_0.5": 12,
-    "recall_at_0.5": 0.6,
+    "flagged_at_0.5": 11,
+    "recall_at_0.5": 0.55,
     "records": [
       {
         "id": "bothbosu-youtube-scam-conversations-train-0",
         "scam_type": "tech_support",
-        "prob_scam": 0.5843946472062397,
+        "prob_scam": 0.6433927247824737,
         "flagged": true
       },
       {
         "id": "bothbosu-youtube-scam-conversations-train-1",
         "scam_type": "tech_support",
-        "prob_scam": 0.49569158042016515,
+        "prob_scam": 0.4856993281375585,
         "flagged": false
       },
       {
         "id": "bothbosu-youtube-scam-conversations-train-2",
         "scam_type": "tech_support",
-        "prob_scam": 0.560010572238866,
+        "prob_scam": 0.5710710579542505,
         "flagged": true
       },
       {
         "id": "bothbosu-youtube-scam-conversations-train-3",
         "scam_type": "tech_support",
-        "prob_scam": 0.5885088799702954,
+        "prob_scam": 0.632272711359006,
         "flagged": true
       },
       {
         "id": "bothbosu-youtube-scam-conversations-train-4",
         "scam_type": "refund_scam",
-        "prob_scam": 0.5478319801544752,
+        "prob_scam": 0.5532042100160915,
         "flagged": true
       },
       {
         "id": "bothbosu-youtube-scam-conversations-train-5",
         "scam_type": "refund_scam",
-        "prob_scam": 0.5398341763142656,
+        "prob_scam": 0.5526440219674983,
         "flagged": true
       },
       {
         "id": "bothbosu-youtube-scam-conversations-train-6",
         "scam_type": "refund_scam",
-        "prob_scam": 0.4830139387135503,
+        "prob_scam": 0.4317465231314048,
         "flagged": false
       },
       {
         "id": "bothbosu-youtube-scam-conversations-train-7",
         "scam_type": "refund_scam",
-        "prob_scam": 0.46302265964033446,
+        "prob_scam": 0.4221057074629384,
         "flagged": false
       },
       {
         "id": "bothbosu-youtube-scam-conversations-train-8",
         "scam_type": "prize_scam",
-        "prob_scam": 0.48221018735256393,
+        "prob_scam": 0.43573889377283115,
         "flagged": false
       },
       {
         "id": "bothbosu-youtube-scam-conversations-train-9",
         "scam_type": "prize_scam",
-        "prob_scam": 0.5088591398612882,
-        "flagged": true
+        "prob_scam": 0.47315170096394493,
+        "flagged": false
       },
       {
         "id": "bothbosu-youtube-scam-conversations-train-10",
         "scam_type": "prize_scam",
-        "prob_scam": 0.40994939176055273,
+        "prob_scam": 0.3167232248813518,
         "flagged": false
       },
       {
         "id": "bothbosu-youtube-scam-conversations-train-11",
         "scam_type": "prize_scam",
-        "prob_scam": 0.546054791069869,
+        "prob_scam": 0.5515573955232844,
         "flagged": true
       },
       {
         "id": "bothbosu-youtube-scam-conversations-train-12",
         "scam_type": "govt_impersonation",
-        "prob_scam": 0.6190078945740379,
+        "prob_scam": 0.6666817008711732,
         "flagged": true
       },
       {
         "id": "bothbosu-youtube-scam-conversations-train-13",
         "scam_type": "govt_impersonation",
-        "prob_scam": 0.6879398739658378,
+        "prob_scam": 0.7659447448816846,
         "flagged": true
       },
       {
         "id": "bothbosu-youtube-scam-conversations-train-14",
         "scam_type": "govt_impersonation",
-        "prob_scam": 0.5508038178844595,
+        "prob_scam": 0.5509778277698238,
         "flagged": true
       },
       {
         "id": "bothbosu-youtube-scam-conversations-train-15",
         "scam_type": "govt_impersonation",
-        "prob_scam": 0.5167390185732481,
+        "prob_scam": 0.5153333095324237,
         "flagged": true
       },
       {
         "id": "bothbosu-youtube-scam-conversations-train-16",
         "scam_type": "prize_scam",
-        "prob_scam": 0.4438191515616716,
+        "prob_scam": 0.3826077001863862,
         "flagged": false
       },
       {
         "id": "bothbosu-youtube-scam-conversations-train-17",
         "scam_type": "prize_scam",
-        "prob_scam": 0.4551125027438279,
+        "prob_scam": 0.3977388431291074,
         "flagged": false
       },
       {
         "id": "bothbosu-youtube-scam-conversations-train-18",
         "scam_type": "tech_support",
-        "prob_scam": 0.5808542370311882,
+        "prob_scam": 0.6455210967784937,
         "flagged": true
       },
       {
         "id": "bothbosu-youtube-scam-conversations-train-19",
         "scam_type": "prize_scam",
-        "prob_scam": 0.4032382201009006,
+        "prob_scam": 0.3305519337340127,
         "flagged": false
       }
     ]
@@ -230,208 +230,208 @@
   "top_features": {
     "scam_indicative_word_ngrams": [
       [
-        "need",
-        0.29636453275103974
-      ],
-      [
         "refund",
-        0.29427461335654304
-      ],
-      [
-        "need to",
-        0.2845469834100211
+        0.5540934725771576
       ],
       [
         "account",
-        0.2782133768165093
-      ],
-      [
-        "verify",
-        0.26408873508385955
-      ],
-      [
-        "process",
-        0.25821592785641784
-      ],
-      [
-        "social security",
-        0.25158859744773115
-      ],
-      [
-        "social",
-        0.24745580100583234
-      ],
-      [
-        "to verify",
-        0.24480877593509792
+        0.508886259789504
       ],
       [
         "am",
-        0.23859943811791343
+        0.4470587350115649
       ],
       [
-        "security number",
-        0.2317256558730472
-      ],
-      [
-        "security",
-        0.22844479081579683
-      ],
-      [
-        "we need",
-        0.2263137013775232
-      ],
-      [
-        "verification",
-        0.22141951278414682
-      ],
-      [
-        "information",
-        0.2200286913407554
+        "need to",
+        0.44656692964617056
       ],
       [
         "the refund",
-        0.21974889100900638
+        0.4185468042820828
       ],
       [
-        "now",
-        0.2099263374764298
+        "social security",
+        0.41399189608214415
+      ],
+      [
+        "social",
+        0.40616544412190575
+      ],
+      [
+        "process",
+        0.4041068150993848
+      ],
+      [
+        "one",
+        0.40138612111697997
+      ],
+      [
+        "verify",
+        0.3992187302929433
+      ],
+      [
+        "need",
+        0.3899178841388493
+      ],
+      [
+        "security number",
+        0.3821866105152863
+      ],
+      [
+        "money",
+        0.3798585221973452
+      ],
+      [
+        "information",
+        0.37463543931195187
+      ],
+      [
+        "sir",
+        0.3599020456987528
       ],
       [
         "your account",
-        0.20693186965408666
+        0.35970981753205217
+      ],
+      [
+        "rupees",
+        0.3585205441095579
+      ],
+      [
+        "to verify",
+        0.3570789938480128
       ],
       [
         "prize",
-        0.202618426984347
+        0.35314698889078605
       ],
       [
-        "this",
-        0.19650805992405815
+        "we need",
+        0.3527362457630518
       ],
       [
-        "do",
-        0.19641475477448164
+        "but",
+        0.35004561019729014
       ],
       [
-        "your social",
-        0.19444377558149908
+        "has",
+        0.34206681867844585
       ],
       [
-        "to your",
-        0.19245474323084102
-      ],
-      [
-        "officer",
-        0.1916863013091176
+        "security",
+        0.3418945669223511
       ],
       [
         "system",
-        0.1910171927910596
+        0.3379346238363513
+      ],
+      [
+        "gift card",
+        0.33174747908460595
       ]
     ],
     "legit_indicative_word_ngrams": [
       [
-        "day",
-        -0.2947462209913076
-      ],
-      [
-        "thanks",
-        -0.2901865204041472
-      ],
-      [
         "delivery",
-        -0.29016624212437014
+        -0.5266247950455133
       ],
       [
         "pm",
-        -0.28218610914850073
+        -0.5050513931029194
       ],
       [
-        "insurance",
-        -0.2626286783411437
-      ],
-      [
-        "have",
-        -0.2507066067212169
-      ],
-      [
-        "caller hi",
-        -0.24632264907142234
-      ],
-      [
-        "hi",
-        -0.24446914449145943
-      ],
-      [
-        "wrong number",
-        -0.2370994194281964
-      ],
-      [
-        "the wrong",
-        -0.22464111263337094
-      ],
-      [
-        "sorry",
-        -0.2227230127730091
+        "thanks",
+        -0.4820533433726306
       ],
       [
         "thank",
-        -0.2220586822224448
-      ],
-      [
-        "appointment",
-        -0.22153380428906594
+        -0.4596663659654693
       ],
       [
         "thank you",
-        -0.22146697607041824
+        -0.4567724714257916
+      ],
+      [
+        "insurance",
+        -0.4501774901892497
+      ],
+      [
+        "day",
+        -0.4317911102716384
+      ],
+      [
+        "at",
+        -0.42512316617782053
+      ],
+      [
+        "home",
+        -0.41373387460226374
+      ],
+      [
+        "caller hi",
+        -0.41269051826284703
+      ],
+      [
+        "hi",
+        -0.40830730947359606
+      ],
+      [
+        "sorry",
+        -0.4078404989724681
       ],
       [
         "good",
-        -0.21586990618666088
+        -0.4065045241581387
       ],
       [
-        "yeah",
-        -0.20800920222026717
-      ],
-      [
-        "tomorrow",
-        -0.20684364486081958
-      ],
-      [
-        "wrong",
-        -0.2046291173843704
+        "wrong number",
+        -0.4050986715297691
       ],
       [
         "alright",
-        -0.20239571455283606
+        -0.4019425003322099
       ],
       [
-        "you for",
-        -0.19466013405723098
+        "have",
+        -0.3954684280903325
       ],
       [
         "receiver alright",
-        -0.19153177112816694
+        -0.3860187933708411
       ],
       [
-        "great",
-        -0.19030371124988824
+        "the wrong",
+        -0.38354712221805354
       ],
       [
-        "dialed",
-        -0.18254249463814767
+        "yeah",
+        -0.37637514029617775
       ],
       [
-        "scheduled",
-        -0.18012155897359602
+        "you for",
+        -0.36171975468715645
       ],
       [
-        "thanks for",
-        -0.17783715717814147
+        "appointment",
+        -0.36145439587919914
+      ],
+      [
+        "wrong",
+        -0.36093078110338006
+      ],
+      [
+        "ll",
+        -0.35366712981267046
+      ],
+      [
+        "branch",
+        -0.345579108615481
+      ],
+      [
+        "or",
+        -0.33105712025235967
       ]
     ]
   },
-  "runtime_seconds": 15.6
+  "runtime_seconds": 22.2
 }

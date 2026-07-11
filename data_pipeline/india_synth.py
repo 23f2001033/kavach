@@ -40,6 +40,10 @@ POOLS = {
     "day": ["tomorrow", "Monday", "Thursday", "Saturday", "day after tomorrow"],
     "doctor": ["Dr. Mehta", "Dr. Kulkarni", "Dr. Nair", "Dr. Bansal"],
     "relative": ["your son", "your daughter", "your nephew", "your grandson"],
+    "gulf_country": ["Dubai", "Doha", "Riyadh", "Muscat", "Abu Dhabi"],
+    "dating_app": ["MatchMate", "TrueConnect", "SoulSync"],
+    "nbfc": ["Bajaj Finserv", "Home Credit", "Fullerton India", "Tata Capital"],
+    "insurer": ["Max Life", "Bajaj Allianz", "Star Health", "HDFC Ergo", "ICICI Lombard"],
 }
 
 C, R = "Caller", "Receiver"  # speaker tags used in unified transcripts
@@ -259,6 +263,189 @@ SCENARIOS = {
             "Yes, that time is fine. What are the next steps?"),
         _t(C, "Just be ready for questions on your projects. The link is in the invite; no fee, no documents needed at this stage. Best of luck!",
             "HR will email the details — please check your inbox and confirm. Talk soon, and good luck!"),
+    ]),
+
+    # ---------------------------------------------------------------------
+    # Hardened scenarios (error-analysis-driven), added after an eval run
+    # showed the fine-tuned text model confidently missing certain
+    # advance-fee-style scam families and confidently false-alarming on
+    # certain benign look-alikes. These 5 new scam + 5 new hard-negative
+    # benign scenarios cover those same CATEGORIES with entirely different
+    # situations, phrasing, and slot fills than evals/scenarios.py -- no
+    # transcript here is copied or closely paraphrased from that file, to
+    # preserve eval integrity (the eval set stays a genuinely unseen probe
+    # even though the category names now overlap by design).
+    # ---------------------------------------------------------------------
+
+    "job_visa_advance_fee": ("unknown_scam", 1, [
+        _t(C, "Congratulations {name}, your profile has been selected for a housekeeping staff position in {gulf_country}, salary starting at {amount_small} a month plus accommodation.",
+            "Good news, an overseas placement agency has approved your application for a driver's position in {gulf_country} through our recruitment tie-up."),
+        _t(R, "Really? I did apply through an agent a few months back, I'd almost given up.",
+            "That's wonderful, when do I need to join?"),
+        _t(C, "Your visa and medical test have already been initiated on our side. The total package — visa stamping, medical, and air ticket booking — comes to {amount_big}, but the company refunds most of it from your first three months' salary.",
+            "Before we issue the offer letter, there's a one-time visa processing and medical package fee of {amount_big}, fully adjustable against your joining bonus."),
+        _t(R, "That's a big amount to pay upfront, are you sure I get it back?",
+            "I've read about people losing money to fake job agents, how do I know this is genuine?"),
+        _t(C, "Sir, hundreds of candidates go through this every month, I can share the agency's registration certificate on WhatsApp right now for your comfort.",
+            "Completely understandable, sir, that's why we only ask for it after your documents are already approved — your visa slot is confirmed, only the payment is pending."),
+        _t(R, "Okay, let me think about it for a day.",
+            "Can I pay half now and half later?"),
+        _t(C, "Sir, the visa quota for this batch closes tomorrow, if the payment doesn't reach us today the slot goes to the next candidate on the waiting list.",
+            "Half payment isn't possible, sir, the embassy processes the visa only after full payment, and the flight is already provisionally booked for next week."),
+    ]),
+
+    "hostel_pg_booking_advance": ("unknown_scam", 1, [
+        _t(C, "Hello, I'm calling about the PG seat you enquired about near {city}, it's a shared room with three other students, very close to college.",
+            "Namaste, this is regarding the hostel bed you asked about on the listing app, ladies-only floor, walking distance to campus."),
+        _t(R, "Yes, the rent looked reasonable for that location. Can I visit and see the room?",
+            "Sounds good, when can I come check the facilities?"),
+        _t(C, "You can, but I have to be honest, four other students called about this exact bed this morning, it's one of our fastest-filling seats this season.",
+            "Of course, but I'll be upfront, this batch of beds usually gets locked within a day of listing."),
+        _t(R, "Okay, but I'd still like to see it before deciding.",
+            "Understood, but I really can't decide without seeing it first."),
+        _t(C, "I completely understand, but the warden only holds a seat for students who've paid the booking advance of {amount_small}, otherwise walk-ins take priority. It's fully adjustable against your first month's rent.",
+            "That's fair, but our policy is a token booking amount of {amount_small} first, it secures your seat while you plan your visit, and it comes off your deposit later."),
+        _t(R, "It still feels odd to pay before even seeing the room.",
+            "I'm a bit hesitant to send money without seeing the place first."),
+        _t(C, "I get that a lot, but I've filled twelve beds this week alone this way, and if you don't decide in the next couple of hours, I'll have to offer it to the next student in line.",
+            "No pressure, but I do need to know in the next hour or so, otherwise the seat opens up to the others who already messaged me."),
+    ]),
+
+    "dating_app_video_unlock": ("unknown_scam", 1, [
+        _t(C, "Hi, this is calling from {dating_app} support, we noticed you have a mutual match who's tried to video call you twice today.",
+            "Hello, {dating_app} verification team here, your match, who's currently working on an oil rig project abroad, has requested a video call with you."),
+        _t(R, "Oh, I saw the missed call notification but didn't know what it was for.",
+            "Yes, we've been chatting for a couple of weeks, he seems genuine."),
+        _t(C, "Video calls on our platform require the Elite Verified tier to protect both users' privacy, it's a one-time unlock fee of {amount_small}.",
+            "For safety, direct video calls only activate once Elite Verification is unlocked on your account, it's a small one-time fee of {amount_small}."),
+        _t(R, "I thought I already had a paid subscription on this app.",
+            "Why would I need a separate fee just for a video call?"),
+        _t(C, "Your current plan covers messaging only, ma'am, video and voice calls sit under our higher safety-verified tier, that's a platform-wide rule now.",
+            "It's for both users' protection, ma'am, video call features unlock only after this one-time payment, standard across the platform."),
+        _t(R, "Let me think about it, I don't want to keep spending on this app.",
+            "This is starting to feel like a lot of separate charges."),
+        _t(C, "Totally your call, but he did mention he's being redeployed next week and this might be the only window to actually see each other on video before that.",
+            "I understand, but your match's account shows he's only active for another day or two before his rig assignment moves him out of network range."),
+    ]),
+
+    "cyber_recovery_processing_fee": ("refund_scam", 1, [
+        _t(C, "Am I speaking with someone who filed a cyber-crime complaint about a UPI fraud around six months ago?",
+            "Is this the person who lost money to a fake OTP call last year? I'm calling regarding your complaint reference."),
+        _t(R, "Yes... I did file a complaint but nothing happened after that.",
+            "Yes, that's me, I'd honestly stopped expecting any update."),
+        _t(C, "We're from a special cyber-crime recovery task force reviewing old pending complaints. Your case has been shortlisted — we've traced part of the funds to a frozen wallet linked to the fraud network.",
+            "Good news, our digital forensics unit managed to trace and freeze a chunk of the funds tied to your case number."),
+        _t(R, "That's amazing, how much can I get back?",
+            "Really? After all this time, that's such a relief."),
+        _t(C, "Based on our recovery, you're eligible for {amount_big} back, but releasing frozen funds requires a mandatory processing and verification charge of {amount_small}, standard for all recovery cases.",
+            "The amount eligible for release is {amount_big}, however a nominal cyber-cell processing fee of {amount_small} must be paid before the release order is signed."),
+        _t(R, "I already lost money once to a fraud, I'm scared to pay anything again.",
+            "That makes me nervous, why would I need to pay to get my own money back?"),
+        _t(C, "That's a fair worry ma'am, but this fee goes toward the department's verification costs, not to any individual, and if it's not paid within 24 hours your file returns to the pending stack for months.",
+            "I understand the hesitation, sir, but this is a one-time government-mandated charge, and delaying it means losing your place in this recovery batch."),
+    ]),
+
+    "health_insurance_bonus_unlock": ("prize_scam", 1, [
+        _t(C, "Good afternoon, I'm calling from the policy benefits cell regarding your group health insurance policy through your old employer.",
+            "Sir, this is regarding a health policy you or your employer took a few years back, it has an unclaimed no-claim bonus sitting against it."),
+        _t(R, "I don't really remember the details of that policy anymore.",
+            "I switched jobs since then, I'm not sure which policy you mean."),
+        _t(C, "It's the group mediclaim policy from around three years back, it has accumulated a no-claim cashback of {amount_big} approved for release this quarter under new IRDAI norms.",
+            "Records show an accumulated wellness bonus of {amount_big} on that policy, cleared for payout under this year's regulatory cycle."),
+        _t(R, "Nobody ever told me about a bonus like this.",
+            "That's news to me, I didn't know unused policies had a bonus."),
+        _t(C, "Most policyholders don't know, sir, that's exactly why this cell reaches out directly — but to release it, there's a one-time IRDAI linking and administrative charge of {amount_small} that has to clear before the payout file closes today.",
+            "It's a small regulatory unlock charge of {amount_small}, mandatory for any payout above a lakh, without it the file simply sits in the queue."),
+        _t(R, "Why would I have to pay to receive my own bonus?",
+            "That sounds backwards for an insurance payout."),
+        _t(C, "I understand it seems unusual sir, but it's simply how the compliance process works this year, and if it isn't paid today the file resets to next quarter's batch, another long wait.",
+            "Sir, I have several other policyholders waiting on this same cutoff, if you can confirm the UPI payment now I'll close your file within the hour."),
+    ]),
+
+    # -------------------------------------------------- hardened benign (hard-negative) scenarios
+    "credit_card_fraud_alert_yesno": ("banking_legit", 0, [
+        _t(C, "Hello, this is the fraud monitoring desk from {bank} credit cards, am I speaking with the cardholder on the card ending {last4}?",
+            "Good evening, calling from {bank}'s card security team regarding a transaction on your card ending {last4}."),
+        _t(R, "Yes, that's me.",
+            "Yes, speaking, is everything okay?"),
+        _t(C, "We've noticed an attempted transaction of {amount_big} at an electronics outlet, did you make this purchase, yes or no?",
+            "There's a charge attempt of {amount_big} showing from a merchant abroad, can you confirm whether this was you, just a yes or no is fine."),
+        _t(R, "No, I haven't made any purchase like that.",
+            "No, I've been home all day, I didn't authorize anything."),
+        _t(C, "Understood, thank you for confirming, we're declining the transaction and blocking the card right now. I want to be clear, I will never ask you for your card number, CVV, expiry, or any OTP on this call — I only needed your yes or no.",
+            "Thank you, that's all I needed. Just so you know, we never ask for your PIN, OTP, or full card number over the phone, this call was only for that one confirmation."),
+        _t(R, "Okay, that's reassuring. What happens to the card now?",
+            "Good to know. So what's the next step?"),
+        _t(C, "A replacement card will be dispatched to your registered address within a week; if you ever get a call asking for OTP or card details claiming to be us, hang up and call the number on the back of your card.",
+            "We'll courier a new card to you shortly. Anytime you want to verify a call like this is genuine, just call the helpline number printed on your card directly."),
+    ]),
+
+    "tenant_document_verification_legit": ("none", 0, [
+        _t(C, "Good morning, I'm calling from the local police station regarding the tenant verification form your landlord submitted for your rental agreement.",
+            "Hello, this is the beat constable's office, we need to complete the routine tenant verification for your new flat."),
+        _t(R, "Yes, my landlord mentioned the police would need to verify some documents.",
+            "Oh right, I was told this would happen when I signed the rental agreement."),
+        _t(C, "Correct, I'd like to schedule a short visit, would {day} around {time} work for you?",
+            "I just need ten minutes at your convenience, is {day} {time} okay for you?"),
+        _t(R, "Yes, I'll be home then. What should I keep ready?",
+            "That works, what documents do you need from me?"),
+        _t(C, "Please keep your Aadhaar card, the signed rental agreement, and a recent photo ready for our records.",
+            "Just your ID proof, the rental agreement copy, and one passport-size photo for the verification form."),
+        _t(R, "Is there any fee I need to pay for this?",
+            "Do I need to pay anything for this verification?"),
+        _t(C, "No sir, tenant verification is a free service, there's no charge involved at any point.",
+            "No fee at all, sir, this is a standard, free process handled directly by the station."),
+    ]),
+
+    "loan_application_followup_legit": ("banking_legit", 0, [
+        _t(C, "Hello, I'm calling from {nbfc} regarding the personal loan application you submitted last week.",
+            "Good afternoon, this is your loan officer at {nbfc}, following up on your home loan application, reference number ending {last4}."),
+        _t(R, "Yes, I've been waiting to hear back on that.",
+            "Oh good, is there an update on my application?"),
+        _t(C, "Your documents have been verified and the loan committee has approved it in principle, we just need your latest salary slip and bank statement to finalize.",
+            "Good news, your file has cleared the initial credit check, we now need your property papers and income proof to move to disbursal."),
+        _t(R, "I can send those over today, where should I email them?",
+            "Sure, I'll gather those, should I bring them to the branch?"),
+        _t(C, "You can upload them directly on our official app under 'my applications', or email them to the address on your application receipt — either works.",
+            "Either the branch or our secure upload portal works, whichever is easier for you, no rush on timing."),
+        _t(R, "Great, I'll upload them tonight.",
+            "I'll drop by the branch this weekend then."),
+        _t(C, "Perfect, once we receive them it usually takes 2-3 working days to process the disbursal, I'll call you once it's confirmed.",
+            "Sounds good, I'll follow up once the documents come in, feel free to call this same number if you have questions."),
+    ]),
+
+    "motor_insurance_renewal_pushy_legit": ("insurance", 0, [
+        _t(C, "Hello sir, this is calling from {insurer} regarding your car insurance policy that's expiring on {day}, I really need a few minutes of your time.",
+            "Good afternoon, {insurer} renewals desk here, your two-wheeler policy lapses very soon and I'd strongly recommend renewing before that."),
+        _t(R, "Oh, I hadn't realized it was expiring already.",
+            "Right, I've been meaning to renew it, keep forgetting."),
+        _t(C, "I understand you're busy, but driving without a valid policy isn't worth the risk, the renewal premium this year is {amount_small}, same coverage as before.",
+            "I know these calls can be a bit much, but please don't let it lapse, the premium is {amount_small} for the same no-claim-bonus coverage you have now."),
+        _t(R, "Okay, how do I actually pay it?",
+            "Fine, what's the easiest way to renew?"),
+        _t(C, "You can renew directly on our official app or website with your policy number, or visit any of our branches — I can't take any payment over this call, it has to go through those official channels.",
+            "Please only use the official {insurer} app or your nearest branch to pay, I won't be sending any payment link on call or SMS."),
+        _t(R, "Got it, I'll do it through the app tonight.",
+            "Alright, I'll visit the branch this week then."),
+        _t(C, "Please don't delay too long, sir, an active policy protects you and it's a quick five-minute process on the app.",
+            "I'll just send a text reminder in a couple of days, but please try to get it done before the expiry date."),
+    ]),
+
+    "collections_reminder_firm_legit": ("banking_legit", 0, [
+        _t(C, "Hello, this is the collections department at {bank} calling about your credit card bill of {amount_small}, which is now ten days overdue.",
+            "Good afternoon, calling from {bank} regarding your personal loan EMI of {amount_small} that hasn't been received this month."),
+        _t(R, "Oh, I think I missed the due date this time, sorry about that.",
+            "Yes, I've been meaning to pay that, it slipped my mind."),
+        _t(C, "I understand, but I do need to flag that continued delay affects your credit score and may attract late fees, so I'd request you clear it at the earliest.",
+            "That's fine, but please note further delay will add a late payment charge and reflect on your credit report, so it's best to settle it soon."),
+        _t(R, "Understood, I'll pay it this week.",
+            "Okay, I'll clear it in the next couple of days."),
+        _t(C, "You can pay through the usual net banking, the mobile app, or at any branch, whichever is convenient — there's no separate link or urgent action needed right this moment.",
+            "Please pay via your regular banking app or branch as usual, I'm not sending any payment link, just wanted to make sure you're aware of the due amount."),
+        _t(R, "Thanks for the reminder, I'll take care of it.",
+            "Appreciate you letting me know, I'll sort it out."),
+        _t(C, "Thank you, and do reach out if you're facing any difficulty, we do have restructuring options available if needed.",
+            "No problem at all, and if there's a genuine hardship on your end, do call the branch, there are options to discuss."),
     ]),
 }
 

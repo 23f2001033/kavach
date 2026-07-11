@@ -1,119 +1,119 @@
 {
   "train.jsonl": {
-    "count": 4983,
+    "count": 5943,
     "label_balance": {
-      "1": 2358,
-      "0": 2625
+      "1": 2838,
+      "0": 3105
     },
     "per_source": {
-      "kavach-india-synth": 1440,
       "bothbosu-scam-dialogue": 1278,
       "bothbosu-multi-agent-scam-conversation": 1280,
+      "kavach-india-synth": 2400,
       "bothbosu-scammer-conversation": 606,
       "bothbosu-single-agent-scam-conversations": 379
     },
     "per_scam_type": {
-      "bank_fraud": 96,
-      "govt_impersonation": 432,
-      "telemarketing": 259,
-      "insurance": 328,
-      "investment_scam": 94,
-      "none": 352,
-      "courier_scam": 95,
+      "refund_scam": 517,
+      "delivery": 398,
+      "personal": 100,
+      "telemarketing": 265,
+      "none": 449,
+      "marketplace_scam": 96,
+      "insurance": 419,
+      "govt_impersonation": 440,
       "appointment": 515,
-      "tech_support": 326,
-      "banking_legit": 102,
-      "marketplace_scam": 97,
-      "utility_legit": 97,
-      "prize_scam": 439,
-      "unknown_scam": 254,
-      "refund_scam": 431,
-      "delivery": 397,
-      "loan_scam": 94,
       "wrong_number": 483,
-      "personal": 92
+      "tech_support": 330,
+      "loan_scam": 103,
+      "prize_scam": 525,
+      "unknown_scam": 543,
+      "utility_legit": 93,
+      "banking_legit": 383,
+      "bank_fraud": 96,
+      "courier_scam": 94,
+      "investment_scam": 94
     },
     "text_length_words": {
-      "mean": 260.66,
-      "median": 166
+      "mean": 240.55,
+      "median": 154
     }
   },
   "val.jsonl": {
-    "count": 623,
+    "count": 743,
     "label_balance": {
-      "1": 295,
-      "0": 328
+      "1": 355,
+      "0": 388
     },
     "per_source": {
-      "bothbosu-scammer-conversation": 76,
-      "bothbosu-multi-agent-scam-conversation": 160,
+      "kavach-india-synth": 300,
       "bothbosu-scam-dialogue": 160,
       "bothbosu-single-agent-scam-conversations": 47,
-      "kavach-india-synth": 180
-    },
-    "per_scam_type": {
-      "unknown_scam": 32,
-      "appointment": 60,
-      "wrong_number": 57,
-      "refund_scam": 48,
-      "govt_impersonation": 54,
-      "investment_scam": 11,
-      "loan_scam": 14,
-      "prize_scam": 49,
-      "marketplace_scam": 13,
-      "insurance": 36,
-      "none": 44,
-      "delivery": 59,
-      "tech_support": 49,
-      "personal": 17,
-      "bank_fraud": 12,
-      "courier_scam": 13,
-      "utility_legit": 14,
-      "telemarketing": 32,
-      "banking_legit": 9
-    },
-    "text_length_words": {
-      "mean": 269.94,
-      "median": 165
-    }
-  },
-  "test.jsonl": {
-    "count": 623,
-    "label_balance": {
-      "0": 328,
-      "1": 295
-    },
-    "per_source": {
       "bothbosu-multi-agent-scam-conversation": 160,
-      "bothbosu-single-agent-scam-conversations": 47,
-      "kavach-india-synth": 180,
-      "bothbosu-scam-dialogue": 160,
       "bothbosu-scammer-conversation": 76
     },
     "per_scam_type": {
-      "wrong_number": 59,
+      "loan_scam": 9,
+      "refund_scam": 75,
+      "delivery": 70,
+      "appointment": 67,
+      "tech_support": 38,
+      "unknown_scam": 72,
+      "govt_impersonation": 57,
+      "telemarketing": 31,
+      "insurance": 51,
+      "banking_legit": 46,
+      "prize_scam": 54,
+      "none": 49,
       "personal": 11,
-      "delivery": 64,
-      "refund_scam": 62,
-      "none": 44,
-      "loan_scam": 12,
-      "prize_scam": 43,
-      "appointment": 65,
-      "govt_impersonation": 60,
-      "insurance": 38,
-      "tech_support": 37,
-      "unknown_scam": 32,
-      "investment_scam": 15,
-      "marketplace_scam": 10,
-      "bank_fraud": 12,
-      "courier_scam": 12,
-      "utility_legit": 9,
-      "telemarketing": 29,
-      "banking_legit": 9
+      "wrong_number": 51,
+      "investment_scam": 12,
+      "courier_scam": 11,
+      "utility_legit": 12,
+      "marketplace_scam": 15,
+      "bank_fraud": 12
     },
     "text_length_words": {
-      "mean": 258.95,
-      "median": 166
+      "mean": 245.14,
+      "median": 154
+    }
+  },
+  "test.jsonl": {
+    "count": 743,
+    "label_balance": {
+      "1": 355,
+      "0": 388
+    },
+    "per_source": {
+      "kavach-india-synth": 300,
+      "bothbosu-scam-dialogue": 160,
+      "bothbosu-multi-agent-scam-conversation": 160,
+      "bothbosu-scammer-conversation": 76,
+      "bothbosu-single-agent-scam-conversations": 47
+    },
+    "per_scam_type": {
+      "prize_scam": 72,
+      "delivery": 52,
+      "marketplace_scam": 9,
+      "investment_scam": 14,
+      "banking_legit": 51,
+      "refund_scam": 69,
+      "wrong_number": 65,
+      "utility_legit": 15,
+      "unknown_scam": 63,
+      "insurance": 52,
+      "telemarketing": 24,
+      "none": 62,
+      "courier_scam": 15,
+      "govt_impersonation": 49,
+      "tech_support": 44,
+      "appointment": 58,
+      "personal": 9,
+      "bank_fraud": 12,
+      "loan_scam": 8
+    },
+    "text_length_words": {
+      "mean": 243.61,
+      "median": 152
     }
   },
   "test_real_youtube.jsonl": {
@@ -136,7 +136,7 @@
     }
   },
   "_meta": {
-    "pool_size_before_dedup": 7600,
+    "pool_size_before_dedup": 8800,
     "pool_duplicates_dropped": 1371,
     "youtube_duplicates_dropped": 0,
     "split_ratios": {

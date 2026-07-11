@@ -1,8 +1,23 @@
 """Text scam-likelihood scorer.
 
-Two implementations of `BaseTextScorer` are available:
+Three implementations of `BaseTextScorer` are available:
 
-- `DistilBertScorer` (preferred, see `get_text_scorer()`): loads the
+- `EnsembleTextScorer` (preferred, see `get_text_scorer()`): when BOTH the
+  fine-tuned DistilBERT model and the TF-IDF+LogReg baseline are loaded,
+  wraps both and returns max(distilbert_score, tfidf_score) for a given
+  transcript. Rationale (see evals/REPORT.md's "Ensemble + hardened data"
+  section): the two scorers are complementary rather than redundant --
+  DistilBERT is far more reliable on real, messy YouTube calls but
+  confidently misses a handful of fresh advance-fee-style scam scenarios
+  (scores near 0.0), while the TF-IDF baseline is more conservative and
+  still catches those same scenarios. A max-based ensemble means either
+  scorer firing confidently is enough to raise risk -- it can only ever
+  move the effective score up relative to either scorer alone, never down,
+  so it cannot make DistilBERT's real-call catch rate worse; it can only
+  make benign false positives worse if the baseline itself scores a benign
+  transcript high, which is why evals/REPORT.md tracks benign FPR at
+  "high" for this config explicitly.
+- `DistilBertScorer` (used alone if the baseline isn't loaded): loads the
   fine-tuned distilbert-base-uncased classifier produced by
   training/text/train_transformer.py from models/distilbert/model
   (config.json + model.safetensors + tokenizer files). Trained with sliding
@@ -10,7 +25,7 @@ Two implementations of `BaseTextScorer` are available:
   docstring and models/distilbert/transformer_metrics.json for training-time
   metrics (99.8% test accuracy; 17/20 real held-out YouTube scam calls caught
   at threshold 0.5, vs. the TF-IDF baseline's 12/20).
-- `TfidfLogRegScorer` (fallback): the original TF-IDF(word 1-2gram + char
+- `TfidfLogRegScorer` (used alone if DistilBERT isn't loaded): the original TF-IDF(word 1-2gram + char
   3-5gram) + LogisticRegression baseline produced by
   training/text/train_baseline.py. That script saves a dict
   ``{"vectorizer": FeatureUnion, "clf": LogisticRegression, "best_C": float}``
@@ -19,11 +34,12 @@ Two implementations of `BaseTextScorer` are available:
   estimator/Pipeline with .predict_proba([str, ...]) if a future export
   changes shape.
 
-`get_text_scorer()` prefers DistilBERT when models/distilbert/model exists
-(and torch/transformers are installed), else falls back to the joblib
-baseline, else the baseline's own "not loaded" degradation (score() -> None,
-is_loaded=False) — nothing else in the backend needs to change based on
-which one loaded; callers only ever see the `BaseTextScorer` interface.
+`get_text_scorer()` prefers the ensemble when BOTH DistilBERT and the joblib
+baseline are loaded; else DistilBERT alone if only that's loaded; else the
+baseline alone if only that's loaded; else the baseline's own "not loaded"
+degradation (score() -> None, is_loaded=False) — nothing else in the backend
+needs to change based on which one loaded; callers only ever see the
+`BaseTextScorer` interface.
 """
 import logging
 import warnings
@@ -241,6 +257,50 @@ class DistilBertScorer(BaseTextScorer):
         return max(window_probs) if window_probs else None
 
 
+class EnsembleTextScorer(BaseTextScorer):
+    """max() ensemble over whichever of {DistilBertScorer, TfidfLogRegScorer}
+    are actually loaded. See the module docstring for the rationale (the two
+    scorers are complementary: DistilBERT generalizes better to real,
+    messy calls but is confidently blind to a few fresh advance-fee-style
+    scam scenarios; TF-IDF is more conservative and still catches those).
+
+    Never raises: scoring a sub-scorer that fails simply contributes None to
+    the max (same graceful-degradation contract as the other scorers). If
+    every sub-scorer returns None (e.g. empty transcript, or neither loaded),
+    score() -> None too.
+
+    Falls back gracefully if constructed with only one scorer loaded (or
+    none) -- is_loaded reflects whether ANY sub-scorer loaded, and score()
+    just takes the max over whichever of them return a non-None value. In
+    practice `get_text_scorer()` only builds this when both are loaded, but
+    the class itself doesn't require that so it stays trivially testable and
+    correct even if only one sub-scorer is available.
+    """
+
+    name = "ensemble"
+
+    def __init__(self, scorers: Optional[List[BaseTextScorer]] = None):
+        self._scorers = scorers if scorers is not None else [DistilBertScorer(), TfidfLogRegScorer()]
+
+    @property
+    def is_loaded(self) -> bool:
+        return any(s.is_loaded for s in self._scorers)
+
+    def score(self, transcript: str) -> Optional[float]:
+        scores = []
+        for scorer in self._scorers:
+            if not scorer.is_loaded:
+                continue
+            try:
+                s = scorer.score(transcript)
+            except Exception as exc:  # never let one sub-scorer's failure break the ensemble
+                logger.warning(f"[kavach.text_model] ensemble sub-scorer {scorer.name!r} failed: {exc}")
+                s = None
+            if s is not None:
+                scores.append(s)
+        return max(scores) if scores else None
+
+
 _default_scorer: Optional[BaseTextScorer] = None
 
 
@@ -249,15 +309,26 @@ def get_text_scorer() -> BaseTextScorer:
     and tests can monkeypatch config.TEXT_MODEL_PATH/DISTILBERT_MODEL_DIR
     before first use).
 
-    Selection order: prefer the fine-tuned DistilBERT scorer if
-    models/distilbert/model exists (and torch/transformers are installed);
-    else fall back to the TF-IDF+LogReg baseline; if THAT is also missing,
-    the baseline instance itself degrades gracefully (is_loaded=False,
-    score() -> None) so callers never need a third branch."""
+    Selection order:
+      1. If BOTH models/distilbert/model (+ torch/transformers) AND
+         models/text_baseline.joblib load successfully, prefer the
+         EnsembleTextScorer (max of the two) -- see module docstring.
+      2. Else if only DistilBERT loaded, use it alone.
+      3. Else if only the TF-IDF baseline loaded, use it alone.
+      4. Else the baseline instance itself degrades gracefully
+         (is_loaded=False, score() -> None) so callers never need a fourth
+         branch.
+    """
     global _default_scorer
     if _default_scorer is None:
         distilbert_scorer = DistilBertScorer()
-        _default_scorer = distilbert_scorer if distilbert_scorer.is_loaded else TfidfLogRegScorer()
+        baseline_scorer = TfidfLogRegScorer()
+        if distilbert_scorer.is_loaded and baseline_scorer.is_loaded:
+            _default_scorer = EnsembleTextScorer([distilbert_scorer, baseline_scorer])
+        elif distilbert_scorer.is_loaded:
+            _default_scorer = distilbert_scorer
+        else:
+            _default_scorer = baseline_scorer
     return _default_scorer
 
 
