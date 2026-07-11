@@ -54,7 +54,12 @@ def parse_args():
     p.add_argument("--window_size", type=int, default=256)
     p.add_argument("--window_stride", type=int, default=128)
     p.add_argument("--seed", type=int, default=42)
-    return p.parse_args()
+    # parse_known_args so Jupyter/Colab kernel argv (e.g. "-f kernel.json") is
+    # ignored when this file is executed inside a notebook instead of via !python.
+    args, unknown = p.parse_known_args()
+    if unknown:
+        print(f"ignoring unrecognized arguments: {unknown}")
+    return args
 
 
 def check_heavy_imports():

@@ -87,7 +87,12 @@ def parse_args():
                     help="run the entire train/eval/metrics/ONNX loop on a tiny in-memory "
                          "synthetic dataset of random waveforms -- no dataset paths needed, "
                          "no downloads beyond the wav2vec2-base checkpoint, CPU-friendly")
-    return p.parse_args()
+    # parse_known_args so Jupyter/Colab kernel argv (e.g. "-f kernel.json") is
+    # ignored when this file is executed inside a notebook instead of via !python.
+    args, unknown = p.parse_known_args()
+    if unknown:
+        print(f"ignoring unrecognized arguments: {unknown}")
+    return args
 
 
 def check_heavy_imports(need_audio_libs):
