@@ -18,8 +18,11 @@ from fastapi.testclient import TestClient
 
 from kavach import transcribe as transcribe_module
 from kavach.api import app
+from kavach.audio_model import get_audio_scorer
 
 client = TestClient(app)
+
+AUDIO_MODEL_LOADED = get_audio_scorer().is_loaded
 
 SCAM_LINE = (
     "I am calling from your bank. Your account will be blocked today. "
@@ -79,7 +82,13 @@ def test_analyze_recording_transcribes_and_flags_scam_wav(tmp_path):
     assert body["risk_level"] != "low"
     assert body["duration_seconds"] > 0
     assert body["transcript"].startswith("Caller: ")
-    assert body["audio_score"] is None  # no models/kavach_audio.onnx shipped yet
+    if AUDIO_MODEL_LOADED:
+        # models/kavach_audio.onnx + onnxruntime present -> the recording
+        # path should fold in a real audio_score (a probability in [0, 1]).
+        assert body["audio_score"] is not None
+        assert 0.0 <= body["audio_score"] <= 1.0
+    else:
+        assert body["audio_score"] is None
 
     print("\n--- Whisper transcript ---")
     print(body["transcript"])

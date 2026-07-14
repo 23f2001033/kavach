@@ -86,5 +86,14 @@ WHISPER_COMPUTE_TYPE = os.environ.get("KAVACH_WHISPER_COMPUTE_TYPE", "int8")
 # Recording upload: accepted container formats for POST /analyze/recording.
 RECORDING_ALLOWED_EXTENSIONS = {".wav", ".mp3", ".m4a", ".ogg", ".webm"}
 
+# --- audio deepfake model (kavach/audio_model.py, training/audio/train_audio_deepfake.py) ---
+# The ONNX model (models/kavach_audio.onnx) was trained on fixed-length
+# AUDIO_MAX_SECONDS windows at AUDIO_SAMPLE_RATE -- random-crop during
+# training, center-crop (zero-padded if shorter) at eval time -- and has
+# never seen any other input length. OnnxAudioScorer.score() must match that
+# eval-time convention exactly (see train_audio_deepfake.py::load_waveform).
+AUDIO_MAX_SECONDS = float(os.environ.get("KAVACH_AUDIO_MAX_SECONDS", "4.0"))
+AUDIO_SAMPLE_RATE = int(os.environ.get("KAVACH_AUDIO_SAMPLE_RATE", "16000"))
+
 # --- CORS ----------------------------------------------------------------------
 CORS_ALLOW_ORIGINS = ["*"]

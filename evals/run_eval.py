@@ -477,6 +477,26 @@ def _discussion_text(report: dict) -> str:
     paras = []
     paras.append(_distilbert_swap_paragraph(report))
     paras.append(
+        "**Audio deepfake scorer shipped, but this harness still doesn't exercise it.** "
+        "`models/kavach_audio.onnx` (wav2vec2-base, fine-tuned in `training/audio/train_audio_deepfake.py`; "
+        "ASVspoof19-eval EER=0.87%/AUC=0.998, In-the-Wild cross-dataset EER=19.5%/AUC=0.905 -- see "
+        "`models/audio_metrics.json`) is now loaded by `kavach/audio_model.py::OnnxAudioScorer` -- raw logit "
+        "-> sigmoid -> P(spoof) in [0, 1], with the waveform center-cropped/zero-padded to the trained "
+        "4-second window (`config.AUDIO_MAX_SECONDS`/`AUDIO_SAMPLE_RATE`, matching the eval-time convention in "
+        "`train_audio_deepfake.py::load_waveform`) -- and folded into `risk_score` via noisy-OR whenever a "
+        "real waveform is available. That only happens on the `POST /analyze/recording` and live-mic paths "
+        "(`kavach/api.py`), which decode an actual audio file/stream. This eval suite (`evals/run_eval.py`) "
+        "scores text transcripts only -- both datasets here (`evals/scenarios.py`, "
+        "`data/processed/test_real_youtube.jsonl`) are text with no associated audio -- and calls "
+        "`combine(text_score=..., signature_hits=..., audio_score=None)` directly, so every number in this "
+        "report is unchanged by the audio integration landing (confirmed by re-running this suite after the "
+        "integration: `text_only`/`fusion_*` numbers on both datasets are identical to the pre-audio run). "
+        "This is an honest known gap in this harness, not a bug: end-to-end audio scoring was instead "
+        "verified directly against `POST /analyze/recording` with a real synthesized WAV (see "
+        "`backend/tests/test_recording.py` and `backend/tests/test_audio_model.py`), not by synthesizing "
+        "audio into this text-only eval, which is out of scope for this suite."
+    )
+    paras.append(
         "**Found by evals, fixed via noisy-OR — here are the before/after numbers (predates the "
         "DistilBERT swap above; text scorer has changed since, only the fusion-math finding is "
         "historical).** "

@@ -42,6 +42,23 @@ except ImportError:  # pragma: no cover - exercised whenever soundfile isn't ins
     sf = None
 
 
+def _fit_to_window(waveform: "np.ndarray") -> "np.ndarray":
+    """Center-crop or zero-pad a 1-D float32 waveform (at config.AUDIO_SAMPLE_RATE)
+    to exactly config.AUDIO_MAX_SECONDS long, matching the eval-time convention
+    in training/audio/train_audio_deepfake.py::load_waveform (center crop --
+    `start = (len(wav) - target_len) // 2` -- or right-pad with zeros if
+    shorter). The model was only ever trained/evaluated on this fixed window
+    length, so any other length is out of distribution."""
+    target_len = int(config.AUDIO_MAX_SECONDS * config.AUDIO_SAMPLE_RATE)
+    n = len(waveform)
+    if n < target_len:
+        return np.pad(waveform, (0, target_len - n)).astype("float32")
+    if n > target_len:
+        start = (n - target_len) // 2
+        return waveform[start:start + target_len].astype("float32")
+    return waveform.astype("float32")
+
+
 class BaseAudioScorer(ABC):
     """Interface every audio deepfake-scorer must implement."""
 
@@ -82,9 +99,15 @@ class OnnxAudioScorer(BaseAudioScorer):
         if not self.is_loaded or waveform is None:
             return None
         try:
+            prepared = _fit_to_window(np.asarray(waveform, dtype="float32"))
             input_name = self._session.get_inputs()[0].name
-            outputs = self._session.run(None, {input_name: waveform})
-            return float(outputs[0].reshape(-1)[0])
+            # Model input is [batch, time]; add the batch dim.
+            outputs = self._session.run(None, {input_name: prepared[None, :]})
+            logit = float(outputs[0].reshape(-1)[0])
+            # The model head is a single raw logit (BCEWithLogitsLoss at
+            # training time) -- apply sigmoid to get P(spoof/cloned voice) in
+            # [0, 1], as kavach/fusion.py expects for audio_score.
+            return float(1.0 / (1.0 + np.exp(-logit)))
         except Exception as exc:
             logger.warning(f"[kavach.audio_model] scoring failed: {exc}")
             return None
