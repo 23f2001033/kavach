@@ -33,9 +33,10 @@ In 2025 alone, Indians lost ₹22,495 crore — about $2.7 billion — to cyber 
 sharper: voice cloning now needs only 3 to 30 seconds of sampled audio to produce a
 convincing fake (per CERT-In advisory CIAD-2024-0084), and in June 2026 the Five Eyes
 intelligence alliance formally warned that voice confirmation alone can no longer be
-trusted to verify who's on the other end of a call. We watched a family member nearly
-wire money to a "digital arrest" scam call — a fake police officer, real fear, and a
-countdown timer designed to stop anyone from stopping to think. The tools that exist
+trusted to verify who's on the other end of a call. What makes the "digital arrest" scam
+so effective isn't technical sophistication — it's that a fake police officer, real fear,
+and an artificial countdown are enough to stop someone from pausing to think, and the
+script explicitly tells the victim not to consult their family. The tools that exist
 today — carrier blocklists, caller-ID apps — only catch numbers *after* they've already
 been reported. Nothing protects you *during* the call, while the manipulation is actually
 happening. That gap is what we built Kavach to close.
@@ -87,24 +88,40 @@ maximally confident text score of 1.0 capped out at 0.588, structurally below ou
 scam calls than the text model alone (6/20 vs. the then-current pre-corpus-hardening
 TF-IDF baseline of 12/20) before we found this. We rewrote it
 as a noisy-OR combination that excludes absent signals from the product instead of
-diluting present ones, which took real-call catch rate from 6/20 to 19/20 overnight.
-Second, the audio side had a nastier surprise: our Kaggle mirror of the In-the-Wild
-cross-dataset shipped without its labels file, so every "spoof-detection" number we
-computed against it early on was actually being scored against nothing. We had to track
-down and ship our own verified `meta.csv` labels before the cross-dataset EER number we
-report (19.5%) meant anything at all — the alternative was quietly reporting a number we
-couldn't actually stand behind. Third, we lost a completed 94-minute wav2vec2 training run
+diluting present ones, which took full-fusion real-call catch rate from 6/20 to 20/20 in
+that run. Second, the audio side ate two full training days for a boring reason: the
+public Kaggle mirror of the In-the-Wild cross-dataset ships the audio without the
+`meta.csv` label file the official release includes, and a later mirror sorted the same
+files into `real/` and `fake/` folders instead. Our training script assumed the documented
+layout, so it crashed at the evaluation step rather than silently scoring against
+nothing. We tracked down and shipped a verified copy of the 31,779-row label file into our
+own repo, and taught the loader to fall back to folder-name labels — only then did the
+19.5% cross-dataset EER we report actually mean anything. Third, we lost a completed
+94-minute wav2vec2 training run
 on Kaggle to a crash during the post-training eval step — the checkpoint existed in memory
 but was never written to disk before the crash took the process down. We fixed the script
 to save the model artifact immediately after training, *before* running any evaluation, so
-a crash during eval can never again cost us the actual trained weights.
+a crash during eval can never again cost us the actual trained weights. And the last one
+we caught with barely a day left, while preparing the demo video: we uploaded a recording
+of a completely benign clinic appointment reminder that happened to be a text-to-speech
+voice, and Kavach called it a scam with 0.92 confidence. The text model had scored it
+correctly and no scam signature had fired — but our voice-forensics signal carried enough
+weight to force a "high" verdict on its own, and the explanation underneath it claimed
+"strong scam signs" while listing none. It was the right bug to find late, because it
+exposed a wrong assumption rather than a wrong line of code: a synthetic voice is not
+evidence of fraud. Bank IVRs, clinic reminders, and delivery notifications are all
+synthetic speech, and an app that shrieks at every one of them teaches exactly the elderly
+users we built this for to ignore it. We reweighted the voice signal so that on its own it
+can only reach "suspicious" — corroborating context, not proof — while a synthetic voice
+*plus* scam content still fires "high" immediately.
 
 ### Accomplishments we're proud of
 
-We're proud that our evaluation suite found three real bugs in our own system before any
-judge could — a fusion-math dilution bug, an overfitting text model, and a training
-pipeline that could silently lose a finished run — and that we fixed all three and kept
-the honest before/after numbers in the report instead of quietly overwriting them. We're
+We're proud that our own testing found five real bugs in our system before any judge could
+— a fusion-math dilution bug, an overfitting text model, a training pipeline that could
+silently lose a finished run, a suspiciously perfect baseline number, and a voice signal
+that flagged legitimate robocalls as fraud — and that we fixed all five and kept the
+honest before/after numbers in the report instead of quietly overwriting them. We're
 proud that our text ensemble catches 19 of 20 real, never-before-seen scam call recordings
 (up from a TF-IDF baseline that catches 11/20 on the current hardened training corpus, and
 caught 12/20 on the original pre-hardening corpus), that our voice model achieves a 0.87%

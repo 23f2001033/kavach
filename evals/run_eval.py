@@ -461,25 +461,45 @@ def _distilbert_swap_paragraph(report: dict) -> str:
         f"({fmt_pct(yt['fusion_notlow']['tpr'])})** — a slight drop, within the range flagged as "
         f"acceptable going in, and traced below to one specific miss."
     )
+    # Current false positives / misses are read live rather than hard-coded: an
+    # earlier version of this paragraph named specific scenarios that later runs
+    # no longer got wrong, which is exactly the kind of stale claim this report
+    # is supposed to catch.
+    sc_records = report["scenarios"]["config_records"]["text_only"]
+    text_fp_ids = [r["id"] for r in sc_records if r["predicted_scam"] and not r["label"]]
+    text_fn_ids = [r["id"] for r in sc_records if not r["predicted_scam"] and r["label"]]
+
+    def _id_list(ids):
+        return ", ".join(f"`{i}`" for i in ids) if ids else "none"
+
     lines.append(
-        "**A real regression: DistilBERT is less reliable than TF-IDF on the fresh, never-seen "
-        "handwritten scenarios.** These 15 scam scenarios were written to avoid template overlap "
-        "with any training data, and DistilBERT's outputs on them are sharply polarized (mostly "
-        "~0.000 or ~1.000, rarely in between) rather than the TF-IDF baseline's more graduated "
-        f"0.5-0.7 range — a sign of overconfidence outside its training distribution. `text_only` "
-        f"scenario TPR fell from **15/15 (100%)** with TF-IDF to **{sc['text_only']['tp']}/15 "
-        f"({fmt_pct(sc['text_only']['tpr'])})** with DistilBERT: it confidently scores several real "
-        "scam scripts near 0.0 (the deepfake-grandchild-emergency, insurance-bonus-unlock-fee, "
-        "fake-job-advance-fee, new-number-parent-whatsapp, and rental-deposit-token-advance "
-        "scenarios), missing them outright rather than landing in an ambiguous middle the way "
-        f"TF-IDF did. Scenario FPR at the `text_only` level also rose, from 1/15 (6.7%) to "
-        f"**{sc['text_only']['fp']}/15 ({fmt_pct(sc['text_only']['fpr'])})** — DistilBERT is "
-        "confidently (~1.000) WRONG on 2 benign scenarios (a bank fraud-alert yes/no call and a "
-        "customer-care callback) that the baseline only got wrong on 1 of. This is a genuine "
-        "cost of the swap, not an artifact of fusion or thresholds, and should be weighed against "
-        "the real-call win above -- it looks like DistilBERT overfit to its (largely synthetic + "
-        "YouTube-real) training distribution and generalizes worse than the simpler TF-IDF model to "
-        "genuinely novel Indian-scam phrasing it never saw."
+        "**A regression this suite caught when DistilBERT first landed — and how it was closed.** "
+        "The 15 fresh scam scenarios were written to avoid template overlap with any training "
+        "data. On the first DistilBERT-only run, its outputs on them were sharply polarized "
+        "(mostly ~0.000 or ~1.000, rarely in between) rather than the TF-IDF baseline's more "
+        "graduated 0.5-0.7 range — classic overconfidence outside the training distribution. "
+        "`text_only` scenario TPR **dropped from 15/15 (100%) with TF-IDF to 10/15 (66.7%)**: "
+        "DistilBERT confidently scored several genuine scam scripts near 0.0, missing them "
+        "outright rather than landing in an ambiguous middle the way TF-IDF did — and benign FPR "
+        "at the 'high' level rose from 0/15 to 2/15. Both were real costs of the swap, not "
+        "artifacts of fusion or thresholds. **The fix was twofold:** the text scorer became an "
+        "*ensemble* (`EnsembleTextScorer` = max of DistilBERT and the TF-IDF baseline, so a "
+        "confident reading from either model survives), and the synthetic corpus was hardened "
+        "with 10 additional scenario families — five advance-fee scam types DistilBERT was blind "
+        "to, plus five adversarial *benign look-alikes* (a genuine bank fraud-alert call, a "
+        "requested customer-care callback, a real loan-officer follow-up) — after which the model "
+        "was retrained."
+    )
+    lines.append(
+        f"**Current state, live from this run:** `text_only` scenario TPR is "
+        f"**{sc['text_only']['tp']}/15 ({fmt_pct(sc['text_only']['tpr'])})** and benign FPR is "
+        f"**{sc['text_only']['fp']}/15 ({fmt_pct(sc['text_only']['fpr'])})**. "
+        + (f"Scam scenarios still missed by the text scorer: {_id_list(text_fn_ids)}. "
+           if text_fn_ids else "No fresh scam scenario is missed by the text scorer. ")
+        + (f"Benign scenarios still falsely flagged: {_id_list(text_fp_ids)} — these are the "
+           "deliberately adversarial look-alikes, and they remain the honest open weakness "
+           "documented under 'Known failure modes' below."
+           if text_fp_ids else "No benign scenario is falsely flagged at this level.")
     )
     lines.append(
         "**Where DistilBERT clearly helps: benign calibration at the 'suspicious' level.** The "
@@ -605,9 +625,11 @@ def _discussion_text(report: dict) -> str:
         "**The tradeoff: 'suspicious' now fires much more easily, by design.** Because "
         "`risk_score` is no longer diluted, benign transcripts whose raw text_score sits "
         "between the 0.35 'suspicious' threshold and the 0.5 text_only decision threshold "
-        "(several benign scenarios score in the high 0.3s/low 0.4s — a bank fraud-alert "
-        "callback, a customer-care callback, a voter-ID camp call) now clear 'suspicious' on "
-        "text evidence alone where they previously didn't. That shows up as a real jump in "
+        "now clear 'suspicious' on text evidence alone where they previously didn't (the "
+        "specific benign scenarios affected in THIS run are listed under 'False positives "
+        "observed' below, read live rather than hard-coded here — an earlier draft of this "
+        "paragraph named scenarios that later runs no longer got wrong). That shows up as a "
+        "real jump in "
         f"scenario FPR at the `fusion_notlow` (not-low) level: **{sc['fusion_notlow']['fp']}/"
         f"{sc['fusion_notlow']['n_benign']} ({sc['fusion_notlow']['fpr']*100:.1f}%)**, up from "
         f"0/15 pre-fix. Per the acceptance criteria for this fix, the metric that actually "

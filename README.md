@@ -172,7 +172,7 @@ download on first use.
 
 ## What our evaluation caught
 
-The eval suite isn't a rubber stamp — it caught four real problems during development,
+The eval suite isn't a rubber stamp — it caught five real problems during development,
 in the order we found them:
 
 1. **The TF-IDF baseline looked perfect and wasn't.** It scored 100% accuracy on the
@@ -200,16 +200,34 @@ in the order we found them:
    TF-IDF fallback) and hardening the training corpus with 10 additional scenario
    families, including adversarial benign look-alikes designed specifically to probe this
    failure mode.
-4. **Two-to-three benign look-alike calls still trigger a false "high."** A genuine
-   bank fraud-alert yes/no call and a customer-care callback request both score "high" on
-   text alone, because their phrasing statistically resembles scam scripts. This is a
-   known, documented limitation — not hidden in a footnote. It is the direct cost of
-   fixing problem #2: once text evidence is no longer diluted, an overconfident text
-   score on a benign call is no longer diluted either. Recalibration (temperature scaling
-   or a lower text weight) is listed under Future Work below.
+4. **A synthetic voice alone was enough to scream "SCAM."** Found while preparing the
+   demo, by uploading a recording of a completely benign clinic-appointment reminder that
+   happened to be text-to-speech. The text model scored it correctly (0.18) and zero
+   signatures fired — but the voice-forensics signal carried weight 0.9 against a 0.65
+   "high" threshold, so a synthetic voice *by itself* forced a "high" verdict: **risk
+   0.917, "high"**, with an explanation that read "This call shows strong scam signs" and
+   then listed none. That would have been a disaster in the field, because a huge share of
+   *legitimate* calls are synthetic speech — bank IVRs, clinic reminders, delivery
+   notifications — and our target users are elderly people who would quickly learn to
+   ignore an alarm that cries wolf at every robocall. The fix reframes the signal to match
+   what it actually proves: a cloned voice is *corroborating context*, not evidence of
+   fraud on its own. Audio weight dropped to 0.45, so audio alone now tops out at
+   "suspicious" while synthetic voice **plus** scam content still fires "high." The same
+   benign recording now scores **0.549, "suspicious"** and explains itself honestly
+   ("...some genuine automated calls also use synthetic voices, so this on its own is not
+   proof of a scam"); the scam recording is unchanged at 0.99999 "high."
+5. **Three benign look-alike calls still trigger a false "high."** A friend asking to
+   borrow money, a customer-care callback the user themselves requested, and a college
+   reunion call all score "high" on text alone, because their phrasing statistically
+   resembles scam scripts. This is a known, documented limitation — not hidden in a
+   footnote. It is the direct cost of fixing problem #2: once text evidence is no longer
+   diluted, an overconfident text score on a benign call is no longer diluted either.
+   Recalibration (temperature scaling or a lower text weight) is listed under Future Work
+   below.
 
-We think shipping this section is more convincing than shipping a report with no failures
-in it.
+Four of these five were bugs in our own reasoning, not our code — wrong weights, wrong
+assumptions about what a signal proves, a number that looked too good. We think shipping
+this section is more convincing than shipping a report with no failures in it.
 
 ## Quickstart
 
