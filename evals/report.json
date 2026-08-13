@@ -9,10 +9,11 @@
     }
   },
   "baseline_context": {
-    "description": "training/text/baseline_metrics.json: TF-IDF+LogReg text model ALONE on the 20 real YouTube scam calls (test_real_youtube.jsonl), at P(scam)>=0.5",
-    "flagged_at_0.5": 12,
+    "description": "training/text/baseline_metrics.json (youtube_real_probe block): TF-IDF+LogReg text model ALONE on the 20 real YouTube scam calls (test_real_youtube.jsonl), at P(scam)>=0.5. Read live from that file at eval-run time, not hardcoded.",
+    "flagged_at_0.5": 11,
     "n": 20,
-    "recall_at_0.5": 0.6
+    "recall_at_0.5": 0.55,
+    "historical_baseline": "Historical note: the ORIGINAL TF-IDF+LogReg baseline (trained before commit 1cc2257 hardened the synthetic corpus with 10 additional scenario families) caught 12/20 (60%) of these same real YouTube calls. Retraining that same baseline on the hardened corpus shifted two borderline calls (prob_scam 0.4857 and 0.4732) from just above the 0.5 threshold to just below it, so the CURRENT committed baseline (training/text/baseline_metrics.json) is 11/20 (55%). Both numbers are real and legitimate -- they describe the baseline before vs. after the corpus-hardening retrain, not a bug in either measurement."
   },
   "scenarios": {
     "n_scam": 15,
@@ -2588,10 +2589,10 @@
   },
   "latency_ms": {
     "n_runs": 50,
-    "median_ms": 546.267,
-    "p95_ms": 3593.752,
-    "min_ms": 198.354,
-    "max_ms": 9150.402,
-    "mean_ms": 1161.317
+    "median_ms": 377.857,
+    "p95_ms": 1605.596,
+    "min_ms": 179.393,
+    "max_ms": 4604.393,
+    "mean_ms": 709.233
   }
 }

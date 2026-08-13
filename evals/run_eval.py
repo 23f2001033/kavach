@@ -46,7 +46,65 @@ from scenarios import ALL_SCENARIOS  # noqa: E402
 TEXT_THRESHOLD = 0.5
 SIGNATURE_SEVERITY_THRESHOLD = 2
 YOUTUBE_PATH = REPO_ROOT / "data" / "processed" / "test_real_youtube.jsonl"
+BASELINE_METRICS_PATH = REPO_ROOT / "training" / "text" / "baseline_metrics.json"
 LATENCY_RUNS = 50
+
+HISTORICAL_BASELINE_NOTE = (
+    "Historical note: the ORIGINAL TF-IDF+LogReg baseline (trained before commit 1cc2257 "
+    "hardened the synthetic corpus with 10 additional scenario families) caught 12/20 (60%) "
+    "of these same real YouTube calls. Retraining that same baseline on the hardened corpus "
+    "shifted two borderline calls (prob_scam 0.4857 and 0.4732) from just above the 0.5 "
+    "threshold to just below it, so the CURRENT committed baseline "
+    "(training/text/baseline_metrics.json) is 11/20 (55%). Both numbers are real and "
+    "legitimate -- they describe the baseline before vs. after the corpus-hardening retrain, "
+    "not a bug in either measurement."
+)
+
+
+# ------------------------------------------------------------------ baseline
+def load_baseline_context() -> dict:
+    """Reads the TF-IDF+LogReg baseline's own training-time probe on the 20 real YouTube
+    scam calls from training/text/baseline_metrics.json ("youtube_real_probe"), so this
+    report always reflects whatever baseline is currently committed instead of a
+    hardcoded snapshot that can silently go stale after a retrain. Falls back to nulls
+    (with an explanatory note) if the file/block is missing -- must never crash the run."""
+    base = {
+        "description": (
+            "training/text/baseline_metrics.json (youtube_real_probe block): TF-IDF+LogReg "
+            "text model ALONE on the 20 real YouTube scam calls (test_real_youtube.jsonl), "
+            "at P(scam)>=0.5. Read live from that file at eval-run time, not hardcoded."
+        ),
+        "flagged_at_0.5": None,
+        "n": None,
+        "recall_at_0.5": None,
+        "historical_baseline": HISTORICAL_BASELINE_NOTE,
+    }
+    if not BASELINE_METRICS_PATH.exists():
+        base["description"] = (
+            f"training/text/baseline_metrics.json not found at {BASELINE_METRICS_PATH} -- "
+            "current baseline numbers are unavailable this run. Run "
+            "training/text/train_baseline.py to regenerate it."
+        )
+        return base
+    try:
+        data = json.loads(BASELINE_METRICS_PATH.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        base["description"] = (
+            f"training/text/baseline_metrics.json exists but could not be read/parsed "
+            f"({exc}) -- current baseline numbers are unavailable this run."
+        )
+        return base
+    probe = data.get("youtube_real_probe")
+    if not probe:
+        base["description"] = (
+            "training/text/baseline_metrics.json exists but has no 'youtube_real_probe' "
+            "block -- current baseline numbers are unavailable this run."
+        )
+        return base
+    base["flagged_at_0.5"] = probe.get("flagged_at_0.5")
+    base["n"] = probe.get("n", 20)
+    base["recall_at_0.5"] = probe.get("recall_at_0.5")
+    return base
 
 
 # ------------------------------------------------------------------ loading
@@ -212,15 +270,7 @@ def build_report():
             "signature_severity_threshold": SIGNATURE_SEVERITY_THRESHOLD,
             "risk_thresholds": config.RISK_THRESHOLDS,
         },
-        "baseline_context": {
-            "description": (
-                "training/text/baseline_metrics.json: TF-IDF+LogReg text model ALONE on "
-                "the 20 real YouTube scam calls (test_real_youtube.jsonl), at P(scam)>=0.5"
-            ),
-            "flagged_at_0.5": 12,
-            "n": 20,
-            "recall_at_0.5": 0.6,
-        },
+        "baseline_context": load_baseline_context(),
         "scenarios": {
             "n_scam": 15,
             "n_benign": 15,
@@ -259,14 +309,22 @@ def render_markdown(report: dict) -> str:
     )
     lines.append("")
     bc = report["baseline_context"]
-    lines.append(
-        f"**Known baseline:** the TF-IDF+LogisticRegression text model alone catches "
-        f"**{bc['flagged_at_0.5']}/{bc['n']}** ({bc['recall_at_0.5']*100:.0f}%) of the real "
-        f"YouTube scam calls at threshold 0.5 (see `training/text/baseline_metrics.json`). "
-        f"That number is the floor this suite is trying to beat — the text model was trained "
-        f"almost entirely on synthetic conversations, so real, messy, human calls are its "
-        f"hardest case."
-    )
+    if bc["flagged_at_0.5"] is None or bc["n"] is None or bc["recall_at_0.5"] is None:
+        lines.append(
+            f"**Known baseline (current): unavailable.** {bc['description']} "
+            f"{bc['historical_baseline']}"
+        )
+    else:
+        lines.append(
+            f"**Known baseline (current):** the TF-IDF+LogisticRegression text model alone, "
+            f"as currently committed and retrained on the hardened corpus, catches "
+            f"**{bc['flagged_at_0.5']}/{bc['n']}** ({bc['recall_at_0.5']*100:.0f}%) of the real "
+            f"YouTube scam calls at threshold 0.5 (read live from "
+            f"`training/text/baseline_metrics.json`). {bc['historical_baseline']} Either number "
+            f"is the floor this suite is trying to beat — the text model was trained almost "
+            f"entirely on synthetic conversations, so real, messy, human calls are its hardest "
+            f"case."
+        )
     lines.append("")
     if not report["text_model_loaded"]:
         lines.append(
@@ -300,10 +358,22 @@ def render_markdown(report: dict) -> str:
     for name, res in report["youtube_real_calls"]["configs"].items():
         lines.append(f"| `{name}` | {res['tp']}/{res['n_scam']} ({fmt_pct(res['tpr'])}) |")
     lines.append("")
+    if bc["flagged_at_0.5"] is None:
+        baseline_ref = "is unavailable this run (see baseline_context / the note above)"
+    else:
+        baseline_ref = (
+            f"catches {bc['flagged_at_0.5']}/{bc['n']} ({bc['recall_at_0.5']*100:.0f}%) of "
+            f"these same real calls, per its own training-time probe"
+        )
     lines.append(
-        f"For reference, the text model alone in the original training-time probe caught "
-        f"{bc['flagged_at_0.5']}/{bc['n']}; the `text_only` row above re-derives that same "
-        f"number through the eval harness (small differences, if any, would flag a scoring bug)."
+        f"Note: the `text_only` row above is scored by this harness's live text scorer "
+        f"(`get_text_scorer()` — fine-tuned DistilBERT when `models/distilbert/model` is "
+        f"present, TF-IDF+LogReg fallback otherwise), NOT the standalone TF-IDF-only "
+        f"baseline. It is a different model and is not expected to reproduce the baseline "
+        f"figure below. For reference, the current TF-IDF-only baseline "
+        f"(`training/text/baseline_metrics.json`, a separate training-time probe) "
+        f"{baseline_ref} — a historical/floor reference number, not something this row "
+        f"re-derives."
     )
     lines.append("")
 
@@ -379,7 +449,9 @@ def _distilbert_swap_paragraph(report: dict) -> str:
     ]
     lines.append(
         f"**Real YouTube calls — the number this integration was meant to move — improved past "
-        f"expectations:** `text_only` catch rate went from **12/20 (60%)** with the TF-IDF baseline to "
+        f"expectations:** `text_only` catch rate went from **12/20 (60%)** with the pre-hardening "
+        f"TF-IDF baseline (the number in effect at the time of this swap; see the historical-vs-"
+        f"current baseline note near the top of this report) to "
         f"**{yt['text_only']['tp']}/20 ({fmt_pct(yt['text_only']['tpr'])})** with DistilBERT in this "
         f"eval harness — better than the training-time non-windowed probe's 17/20, because this "
         f"harness's sliding-window scoring catches at least one long real call (>512 tokens; a "
@@ -502,7 +574,9 @@ def _discussion_text(report: dict) -> str:
         "historical).** "
         "An earlier run of this exact suite found that full fusion (`fusion_notlow`) caught "
         "FEWER scams than the text model alone, on both datasets: text_only 15/15 vs "
-        "fusion_notlow 8/15 on the fresh scenarios, and text_only 12/20 vs fusion_notlow 6/20 "
+        "fusion_notlow 8/15 on the fresh scenarios, and text_only 12/20 (the pre-hardening "
+        "TF-IDF baseline in effect at the time; see the historical-vs-current baseline note "
+        "near the top of this report) vs fusion_notlow 6/20 "
         "on the real YouTube calls; `fusion_high_only` caught essentially nothing (0/20 real "
         "calls). The root cause was `combine()` computing a weighted average of whichever of "
         "{text, signature, audio} were active, renormalizing over the active weights. Since "
@@ -522,7 +596,7 @@ def _discussion_text(report: dict) -> str:
         f"fusion_notlow TPR went from 8/15 to **{sc['fusion_notlow']['tp']}/15** "
         f"({sc['fusion_notlow']['tpr']*100:.1f}%); on the 20 real YouTube calls it went from "
         f"6/20 to **{yt['fusion_notlow']['tp']}/20** ({yt['fusion_notlow']['tpr']*100:.1f}%), "
-        "beating both the 12/20 text-only floor and the pre-fix fusion number. "
+        "beating both the pre-hardening 12/20 text-only floor and the pre-fix fusion number. "
         f"`fusion_high_only` — the strict 'high' predicate — went from 0/20 to "
         f"**{yt['fusion_high_only']['tp']}/20** real calls, confirming a confident text "
         "signal alone can now clear the 'high' bar without needing a signature hit."
@@ -582,7 +656,8 @@ def _discussion_text(report: dict) -> str:
         "**Known failure modes.** (1) Any signature-based approach is a fixed-vocabulary "
         "regex list — it cannot catch a well-written advance-fee scam that never says OTP, "
         "PIN, AnyDesk, or 'digital arrest'. (2) The text model's training data skews synthetic "
-        "and India-specific; the baseline 12/20 recall on real YouTube calls (largely US "
+        "and India-specific; the pre-hardening TF-IDF baseline's 12/20 recall on real YouTube "
+        "calls (largely US "
         "SSN/tech-support scams) shows it does not yet generalize cleanly across accents, "
         "scam families, or English dialects — noisy-OR fusion inherits that ceiling from text "
         "for any call where neither text nor signatures fire. (3) Noisy-OR assumes each "
@@ -619,7 +694,9 @@ def _discussion_text(report: dict) -> str:
         )
     paras.append(
         "**Bottom line.** This is an honest-evals framing, not a victory lap: the headline "
-        "12/20 text-only recall on real calls was the number to beat, and after the noisy-OR "
+        "12/20 text-only recall on real calls (the pre-hardening TF-IDF baseline; the same "
+        "baseline retrained on the now-hardened corpus reads 11/20 — see the note near the "
+        "top of this report) was the number to beat, and after the noisy-OR "
         "fix full fusion (`fusion_notlow`) now beats it on both datasets and no longer loses "
         "to text-only anywhere — the dilution bug this suite originally caught is fixed and "
         "re-verified here. The cost is visible and quantified, not hidden: benign FPR at the "

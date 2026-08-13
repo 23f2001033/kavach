@@ -139,8 +139,13 @@ All numbers below are from [`evals/REPORT.md`](evals/REPORT.md) / [`evals/report
 | Full fusion (non-"low") | **19/20 (95.0%)** |
 | Full fusion (strict "high") | **19/20 (95.0%)** |
 
-For reference, the original TF-IDF+LogisticRegression baseline caught only 12/20 (60%) of
-these same real calls — the gap that motivated fine-tuning DistilBERT in the first place.
+For reference, the original TF-IDF+LogisticRegression baseline — trained before the
+synthetic corpus was hardened with 10 additional scenario families — caught only 12/20
+(60%) of these same real calls, which is the gap that motivated fine-tuning DistilBERT in
+the first place. That same baseline, retrained on the now-hardened corpus (see
+[`training/text/baseline_metrics.json`](training/text/baseline_metrics.json)), currently
+reads 11/20 (55%) — two borderline calls moved from just above the 0.5 threshold to just
+below it. Either number is well behind DistilBERT's 19/20.
 
 ### Voice forensics (wav2vec2-base, ONNX)
 
@@ -172,15 +177,20 @@ in the order we found them:
 
 1. **The TF-IDF baseline looked perfect and wasn't.** It scored 100% accuracy on the
    synthetic held-out test set — a red flag, not a win — and then only caught 12/20 (60%)
-   of real scam calls. That gap between synthetic-test performance and real-call
-   performance is what motivated fine-tuning DistilBERT instead of shipping the baseline.
+   of real scam calls (the pre-corpus-hardening baseline, in effect at the time). That gap
+   between synthetic-test performance and real-call performance is what motivated
+   fine-tuning DistilBERT instead of shipping the baseline. (The same TF-IDF baseline,
+   retrained since on the hardened corpus, currently reads 11/20 — see
+   [`training/text/baseline_metrics.json`](training/text/baseline_metrics.json) — still
+   well behind DistilBERT.)
 2. **Fusion was silently diluting the text signal.** An earlier weighted-average combiner
    renormalized over whichever signals were active. Since no audio model existed yet at
    the time, every request renormalized to `{text: 0.588, signature: 0.412}` — so even a
    maximally confident text score of 1.0 capped out at 0.588, structurally below the 0.65
    "high" threshold. Full fusion was catching *fewer* real scams than the text model
-   alone (6/20 vs. 12/20) before this was found. The fix — noisy-OR combination with no
-   renormalization — took real-call catch rate from 6/20 to 19/20.
+   alone (6/20 vs. the then-current 12/20 pre-hardening baseline) before this was found.
+   The fix — noisy-OR combination with no renormalization — took real-call catch rate
+   from 6/20 to 19/20.
 3. **DistilBERT overfit and confidently missed real scenarios.** After swapping in the
    fine-tuned transformer, it went sharply polarized on the 15 fresh handwritten
    scenarios — outputs near 0.000 or 1.000, rarely in between — and confidently scored

@@ -84,7 +84,8 @@ were active, and since no audio model existed yet at the time, every real reques
 renormalized to effective weights of `{text: 0.588, signature: 0.412}` — so even a
 maximally confident text score of 1.0 capped out at 0.588, structurally below our 0.65
 "high" threshold, no matter how obvious the scam. Full fusion was catching *fewer* real
-scam calls than the text model alone (6/20 vs. 12/20) before we found this. We rewrote it
+scam calls than the text model alone (6/20 vs. the then-current pre-corpus-hardening
+TF-IDF baseline of 12/20) before we found this. We rewrote it
 as a noisy-OR combination that excludes absent signals from the product instead of
 diluting present ones, which took real-call catch rate from 6/20 to 19/20 overnight.
 Second, the audio side had a nastier surprise: our Kaggle mirror of the In-the-Wild
@@ -105,7 +106,9 @@ judge could — a fusion-math dilution bug, an overfitting text model, and a tra
 pipeline that could silently lose a finished run — and that we fixed all three and kept
 the honest before/after numbers in the report instead of quietly overwriting them. We're
 proud that our text ensemble catches 19 of 20 real, never-before-seen scam call recordings
-(up from a 12/20 baseline), that our voice model achieves a 0.87% error rate on
+(up from a TF-IDF baseline that catches 11/20 on the current hardened training corpus, and
+caught 12/20 on the original pre-hardening corpus), that our voice model achieves a 0.87%
+error rate on
 same-distribution data *and* that we reported its harder 19.5% cross-dataset number
 instead of hiding it, and that the entire detection pipeline — transcription, text
 scoring, voice forensics — runs completely offline with zero required external API calls,
