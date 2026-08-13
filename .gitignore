@@ -21,3 +21,6 @@ models/*.joblib
 models/distilbert/
 training/text/output/
 training/audio/output/
+
+# training artifacts downloaded from Kaggle (never commit - hundreds of MB)
+*.zip

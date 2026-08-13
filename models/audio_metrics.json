@@ -1,0 +1,35 @@
+{
+  "model": "facebook/wav2vec2-base",
+  "args": {
+    "asvspoof_root": "/kaggle/input",
+    "itw_root": "/kaggle/input",
+    "output_dir": "/kaggle/working/audio_output",
+    "epochs": 2,
+    "batch_size": 16,
+    "lr": 3e-05,
+    "head_lr": 0.0001,
+    "max_seconds": 4.0,
+    "seed": 42,
+    "freeze_feature_extractor": true,
+    "limit_train": 0,
+    "num_workers": 0,
+    "smoke": false
+  },
+  "n_train": 25380,
+  "n_dev": 24844,
+  "n_eval19": 71237,
+  "n_itw": 31779,
+  "best_dev_eer": 0.003980622637396417,
+  "asvspoof19_eval": {
+    "eer": 0.008702555363644088,
+    "roc_auc": 0.9978838192298424,
+    "accuracy_at_0.5": 0.9250389544759043,
+    "n": 71237
+  },
+  "in_the_wild_cross_dataset": {
+    "eer": 0.1945883588938792,
+    "roc_auc": 0.9053084678388261,
+    "accuracy_at_0.5": 0.5542024607445168,
+    "n": 31779
+  }
+}
