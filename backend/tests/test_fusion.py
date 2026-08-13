@@ -119,6 +119,33 @@ def test_signature_subscore_saturates():
     assert signature_subscore([]) == 0.0
 
 
+def test_audio_only_max_confidence_does_not_reach_high():
+    """Regression test for the audio-only false-positive bug: a maximally
+    confident synthetic-voice reading, with no suspicious text and no
+    signature hits, must NOT alone be enough to declare "high". A synthetic
+    voice is corroborating context (bank IVR, clinic/delivery reminders, and
+    OTP robocalls are legitimately synthetic too), not proof of a scam by
+    itself. It should still land on "suspicious", never "low" -- the voice
+    signal must not be silently discarded either."""
+    result = combine(text_score=None, signature_hits=[], audio_score=1.0)
+    assert result["risk_level"] == "suspicious"
+    assert result["risk_score"] < config.RISK_THRESHOLDS["high"]
+    assert result["risk_score"] >= config.RISK_THRESHOLDS["suspicious"]
+
+    # Low-but-nonzero text alongside max-confidence audio (mirrors the real
+    # bug report: text_score ~0.18, audio_score ~0.999, no signature hits).
+    result = combine(text_score=0.18, signature_hits=[], audio_score=0.999)
+    assert result["risk_level"] == "suspicious"
+
+
+def test_audio_high_plus_text_high_still_reaches_high():
+    """A synthetic voice COMBINED with suspicious content must still escalate
+    to "high" -- the fix caps audio's solo contribution, it does not mute it
+    entirely once other evidence is present."""
+    result = combine(text_score=0.9, signature_hits=[], audio_score=1.0)
+    assert result["risk_level"] == "high"
+
+
 def test_combine_all_signals_present():
     result = combine(text_score=0.9, signature_hits=[HIGH_HIT, MED_HIT], audio_score=0.9)
     assert set(result["components"]) == {"text", "signature", "audio"}

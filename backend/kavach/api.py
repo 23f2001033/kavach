@@ -133,7 +133,7 @@ def _analyze(transcript: str, meter: Optional[HysteresisMeter] = None) -> Analyz
     result = combine(text_score=text_score, signature_hits=hits, audio_score=audio_score)
     risk_level = meter.update(result["risk_score"]) if meter is not None else result["risk_level"]
 
-    explanation = build_explanation(risk_level, hits, text_score, transcript)
+    explanation = build_explanation(risk_level, hits, text_score, transcript, audio_score=audio_score)
 
     return AnalyzeResponse(
         risk_score=result["risk_score"],
@@ -213,7 +213,7 @@ async def analyze_recording(file: UploadFile = File(...)) -> RecordingAnalyzeRes
 
         result = combine(text_score=text_score, signature_hits=hits, audio_score=audio_score)
         risk_level = result["risk_level"]
-        explanation = build_explanation(risk_level, hits, text_score, transcript)
+        explanation = build_explanation(risk_level, hits, text_score, transcript, audio_score=audio_score)
 
         return RecordingAnalyzeResponse(
             risk_score=result["risk_score"],

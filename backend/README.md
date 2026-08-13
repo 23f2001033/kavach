@@ -213,12 +213,44 @@ installed, the endpoint returns `503` instead of crashing.
   direction of travel — this is what stops the on-screen risk meter
   flickering near a boundary.
 
+  **Audio weight is deliberately capped below "high" (v1.1 fix).** A
+  synthetic-sounding voice is *corroborating context*, not proof of a scam on
+  its own — a large share of legitimate calls are synthetic speech too (bank
+  IVR menus, clinic/delivery appointment reminders, OTP-readout robocalls).
+  With `config.FUSION_WEIGHTS["audio"] = 0.9` (the original default), a
+  maximally-confident synthetic-voice reading noisy-ORed straight through to
+  `risk_score ≈ 0.9` and "high" *regardless of what was actually said* — a
+  fully benign, synthetic-voice clinic reminder was flagged "high" with the
+  explanation "This call shows strong scam signs" even though zero signature
+  hits had fired. That's exactly the failure mode this product must avoid for
+  elderly users: a false "high" alarm on ordinary automated calls trains
+  people to distrust (and eventually ignore) the warning. The default is now
+  `KAVACH_W_AUDIO=0.45`, chosen so a maximally-confident audio-only reading
+  lands exactly at `risk_score == 0.45` — above "suspicious" (0.35, "this
+  voice sounds artificial, be careful") but below "high" (0.65) — while still
+  combining with suspicious content to reach "high" decisively (e.g.
+  `text=0.9` + `audio=1.0` → `1 - (1-0.9)*(1-0.45) = 0.945` → "high"). See
+  `kavach/config.py`'s `FUSION_WEIGHTS` comment and the regression tests in
+  `tests/test_fusion.py` (`test_audio_only_max_confidence_does_not_reach_high`,
+  `test_audio_high_plus_text_high_still_reaches_high`).
+
 - **Explainer** (`kavach/explain.py`): rule-based composer is authoritative;
   it lists the plain-language explanation of each matched signature, ordered
   by severity. The optional LLM step (`google-generativeai`, imported lazily)
   only rewords that already-correct text for a non-technical reader — the
   prompt explicitly forbids inventing new facts — and any error is swallowed
   with a fallback to the rule-based text.
+
+  **Two invariants (v1.1 fix), regression-tested in `tests/test_explain.py`:**
+  the headline only ever claims "scam signs" when `signature_hits` is
+  non-empty (it previously said "This call shows strong scam signs." for an
+  audio-only "high" verdict while listing zero signs — a lie), and every
+  "suspicious"/"high" verdict enumerates at least one concrete, human-readable
+  reason. When `audio_score` is high enough to be worth mentioning, the
+  explanation names the voice explicitly ("The voice on this call sounds
+  artificially generated...") and always pairs that with the honest caveat
+  that some genuine automated calls (bank/clinic/delivery reminders) use
+  synthetic voices too, so the voice signal alone is not proof of a scam.
 
 ## Tests
 

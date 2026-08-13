@@ -46,12 +46,27 @@ GEMINI_TIMEOUT_SECONDS = float(os.environ.get("KAVACH_GEMINI_TIMEOUT_SECONDS", "
 # reading of that channel alone can contribute. text=1.0 means a maximally
 # confident text_score alone maps straight through to risk_score (no
 # structural ceiling). signature=0.85 discounts the regex engine slightly
-# since it is noisier/coarser than a learned score. audio=0.9 is a
-# placeholder for when the ONNX voice model ships.
+# since it is noisier/coarser than a learned score. audio=0.45 is
+# deliberately capped BELOW the "high" threshold (0.65, see RISK_THRESHOLDS
+# below) but ABOVE the "suspicious" one (0.35): "this voice sounds
+# synthetic" is corroborating context, not proof of a scam on its own -- a
+# huge fraction of legitimate calls (bank IVR, clinic/delivery reminders,
+# OTP-readout robocalls) are synthetic speech too. With audio=0.45, a
+# maximally-confident synthetic-voice reading ALONE noisy-ORs straight
+# through to risk_score == 0.45 (see fusion.combine: with only one signal
+# present, risk_score == that signal's score * its weight), which lands on
+# "suspicious" ("this voice sounds artificial -- be careful") and can never
+# alone reach "high". Combined with suspicious/scammy content it still
+# escalates decisively, e.g. text=0.9 + audio=1.0 -> noisy-OR ==
+# 1 - (1-0.9)*(1-0.45) = 0.945 -> "high". Previously this was 0.9, which let
+# voice-only readings force "high" regardless of what was actually said --
+# see backend/README.md's Fusion section and the regression tests in
+# tests/test_fusion.py (test_audio_only_max_confidence_does_not_reach_high /
+# test_audio_high_plus_text_high_still_reaches_high) for the bug this fixes.
 FUSION_WEIGHTS = {
     "text": float(os.environ.get("KAVACH_W_TEXT", "1.0")),
     "signature": float(os.environ.get("KAVACH_W_SIGNATURE", "0.85")),
-    "audio": float(os.environ.get("KAVACH_W_AUDIO", "0.9")),
+    "audio": float(os.environ.get("KAVACH_W_AUDIO", "0.45")),
 }
 
 # Per-hit severity -> contribution to the signature sub-score (1=low, 2=medium,
