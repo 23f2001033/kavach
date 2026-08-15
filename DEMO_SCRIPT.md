@@ -47,14 +47,36 @@ editing — either works with the tools below).
 Windows 11's built-in Xbox Game Bar (`Win+G`, zero install), or ScreenPal / Loom free tier
 if you want built-in webcam-in-corner + easy trimming without a separate editor.
 
+## Title cards / slides
+
+Open **`demo_assets/slides.html`** in Chrome — it's a self-contained 5-slide deck styled to
+match the app, no internet or design tool needed. Controls:
+
+| Key | Action |
+|---|---|
+| `→` / `Space` / click | next slide |
+| `←` | previous slide |
+| `F` | fullscreen (or just press `F11`) |
+| `H` | hide the progress dots — **do this before you record** |
+
+The five slides map onto the script as: **1** Kavach title (Scene 1), **2** the ₹22,495
+crore stat (Scene 1), **3** the 3–30-second voice-cloning gap (Scene 1), **4** the results
+table (Scene 6), **5** the end card with the GitHub link (Scene 6). Numbers on slide 4 are
+the real measured ones — if you re-run the evals and they move, update that slide to match.
+
+**Recording tip:** go fullscreen and press `H` first, so no browser chrome, dots, or
+keyboard hint appear in the video. Each slide animates in when you land on it, so pause
+about half a second after advancing before you start talking.
+
 ---
 
 ## Shot list
 
 ### Scene 1 — The hook (0:00–0:20)
 
-**Screen:** Black slide or a simple title card with "Kavach" and the ₹22,495 crore
-statistic, then cut to the Kavach app landing/header.
+**Screen:** `demo_assets/slides.html` fullscreen — slide 1 (Kavach title), advance to
+slide 2 (₹22,495 crore) as you say the number, then slide 3 (voice cloning) — then
+alt-tab to the Kavach app landing/header.
 
 **Narration:**
 > "In 2025, Indians lost ₹22,495 crore — about $2.7 billion — to cyber fraud. Voice
@@ -124,9 +146,8 @@ percentage on screen here.)*
 
 ### Scene 6 — Closing: rigor + privacy (2:30–2:55)
 
-**Screen:** Quick cut to a terminal or a static slide showing the eval numbers — e.g. the
-results table from `README.md` or `evals/REPORT.md` — then back to the app's health/status
-chip showing the backend online.
+**Screen:** Cut back to `slides.html` — slide 4 (the results grid) while you talk about
+the evaluation, then slide 5 (end card with the GitHub link) to close on.
 
 **Narration:**
 > "We didn't just build this — we evaluated it honestly. Our own eval suite caught a real
