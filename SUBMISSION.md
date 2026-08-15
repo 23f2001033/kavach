@@ -13,17 +13,26 @@ Kavach
 
 *(max 200 characters)*
 
-> Kavach listens to a phone call as it happens and tells you, in plain words, if you're
-> being scammed and why — and whether the caller's voice is an AI clone. Runs on your device.
+> Scam blockers work after the call. Kavach works during it — warning you live, in plain
+> words, why a call is a scam and whether the voice is an AI clone. Runs on your device.
 
-(178 characters)
+(177 characters)
 
-*Alternative, if you prefer leading with the technique over the benefit:*
+The contrast in the first sentence is the hook; the second says what the thing actually
+*is*, which the hook alone doesn't. Gallery visitors see the project name and this line
+and nothing else, so it has to do both jobs.
+
+*Alternatives:*
+
+> Scam blockers work after the call. Kavach works during it.
+
+(57 characters — maximum punch, but a reader still doesn't learn what Kavach does. Better
+as the opening line of a pitch than as the standalone tagline.)
 
 > Real-time AI defense against phone scams — fuses voice-clone detection, scam-language
 > AI, and India-specific fraud signatures into one explainable verdict, live on the call.
 
-(173 characters)
+(173 characters — leads with technique instead of benefit.)
 
 ## Built with
 
@@ -163,6 +172,23 @@ report documents honestly rather than hides; adding speaker diarization to
 block; expanding voice-forensics training data across more TTS/vocoder families and
 languages to bring the cross-dataset EER down; and building an on-device mobile version
 so Kavach can sit on the actual phone call path, not just a browser tab.
+
+## Publishing the demo video
+
+**Use YouTube, not Google Drive.** Devpost embeds YouTube and Vimeo inline, so a judge
+watches without leaving the submission page. A Drive link makes them click through, wait
+on a preview that often fails for large files, and sometimes hit a permissions wall — any
+of which can cost you the view entirely.
+
+1. Upload to YouTube and set visibility to **Public** (Unlisted also embeds fine, but
+   Public removes any doubt about access).
+2. Answer **"No, it's not made for kids"** — the "made for kids" setting disables
+   embedding, which would break the Devpost player.
+3. Title it something like `Kavach — real-time AI scam-call defense (ML Empowerment Build
+   Challenge 2.0)` and put the repo link in the description.
+4. **Verify it before submitting:** open the URL in a private/incognito window. If it
+   plays there, judges can see it.
+5. Paste that URL into Devpost's video field.
 
 ## Suggested prize categories
 
