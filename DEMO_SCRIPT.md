@@ -59,10 +59,11 @@ match the app, no internet or design tool needed. Controls:
 | `F` | fullscreen (or just press `F11`) |
 | `H` | hide the progress dots — **do this before you record** |
 
-The five slides map onto the script as: **1** Kavach title (Scene 1), **2** the ₹22,495
-crore stat (Scene 1), **3** the 3–30-second voice-cloning gap (Scene 1), **4** the results
-table (Scene 6), **5** the end card with the GitHub link (Scene 6). Numbers on slide 4 are
-the real measured ones — if you re-run the evals and they move, update that slide to match.
+The six slides map onto the script as: **1** Kavach title (Scene 1), **2** what it does
+(Scene 1), **3** the ₹22,495 crore stat (Scene 2), **4** the voice-cloning gap (Scene 2),
+**5** the results table (Scene 7), **6** the end card with the GitHub link (Scene 7).
+Numbers on slide 5 are the real measured ones — if you re-run the evals and they move,
+update that slide to match.
 
 **Recording tip:** go fullscreen and press `H` first, so no browser chrome, dots, or
 keyboard hint appear in the video. Each slide animates in when you land on it, so pause
@@ -72,21 +73,33 @@ about half a second after advancing before you start talking.
 
 ## Shot list
 
-### Scene 1 — The hook (0:00–0:20)
+### Scene 1 — What it is (0:00–0:14)
 
-**Screen:** `demo_assets/slides.html` fullscreen — slide 1 (Kavach title), advance to
-slide 2 (₹22,495 crore) as you say the number, then slide 3 (voice cloning) — then
-alt-tab to the Kavach app landing/header.
+Say what the thing *is* before you say why it matters. A judge watching their fortieth
+submission needs something concrete to hang the statistics on, and you have about ten
+seconds to give it to them. No jargon here — no "fusion", no model names, nothing that
+needs a second sentence to explain.
+
+**Screen:** `demo_assets/slides.html` fullscreen — slide 1 (Kavach title), then advance to
+slide 2 (what it does) as you start the second sentence.
 
 **Narration:**
-> "In 2025, Indians lost ₹22,495 crore — about $2.7 billion — to cyber fraud. Voice
-> cloning now needs just three to thirty seconds of audio to fake a familiar voice. And
-> in June 2026, the Five Eyes intelligence alliance said what security researchers
-> already knew: voice confirmation alone can no longer verify who's calling you. This is
-> Kavach — real-time, explainable scam-call defense that runs while the call is still
-> happening."
+> "This is Kavach. It listens to a phone call while it's happening, and tells you — in
+> plain words — whether you're being scammed, and exactly why. It can even tell when the
+> voice on the other end is an AI clone. And all of it runs on your own device."
 
-### Scene 2 — Live Guard flags a scam in real time (0:20–1:05)
+### Scene 2 — Why it matters (0:14–0:30)
+
+**Screen:** Slide 3 (₹22,495 crore) as you say the number, then slide 4 (voice cloning)
+— then alt-tab to the Kavach app.
+
+**Narration:**
+> "It matters because in 2025, Indians lost ₹22,495 crore — about $2.7 billion — to cyber
+> fraud. Cloning someone's voice now takes as little as three seconds of audio. And your
+> phone's blocklist only knows about numbers that have already claimed a victim. Nothing
+> protects you during the call itself. Let me show you."
+
+### Scene 3 — Live Guard flags a scam in real time (0:30–1:12)
 
 **Screen:** Switch to the Live Guard tab. Click "Start listening." Read the digital-arrest
 script aloud, at a natural pace, watching the rolling transcript fill in live and the risk
@@ -108,7 +121,7 @@ out fully on camera — don't cut it short, this is the payoff beat.
 
 > "And there's the warning — spoken once, so it interrupts without becoming noise."
 
-### Scene 3 — Why: the explanation cards (1:05–1:35)
+### Scene 4 — Why: the explanation cards (1:12–1:38)
 
 **Screen:** Scroll down to the scam-sign cards under the gauge. Point at (cursor
 highlight or slow pan) two or three specific cards.
@@ -119,7 +132,7 @@ highlight or slow pan) two or three specific cards.
 > and a secrecy demand, telling you not to tell your family. Each card quotes the exact
 > line that triggered it."
 
-### Scene 4 — Elderly Mode (1:35–1:55)
+### Scene 5 — Elderly Mode (1:38–1:54)
 
 **Screen:** Toggle Elderly Mode in the header. The view simplifies to a huge gauge, a
 one-line verdict, and one piece of advice.
@@ -129,7 +142,7 @@ one-line verdict, and one piece of advice.
 > Elderly Mode strips everything down to one gauge, one verdict, one line of advice.
 > No jargon, no cards to parse under stress."
 
-### Scene 5 — Recording upload + voice-clone detection (1:55–2:30)
+### Scene 6 — Recording upload + voice-clone detection (1:54–2:26)
 
 **Screen:** Switch to the Recording Upload tab. Click "Analyze recording" on the
 pre-selected file. Show the "Transcribing..." state briefly, then the result: gauge,
@@ -144,18 +157,19 @@ transcript text, and the voice-clone suspicion line.
 *(If your test file is a synthesized/cloned voice, point out the specific audio-suspicion
 percentage on screen here.)*
 
-### Scene 6 — Closing: rigor + privacy (2:30–2:55)
+### Scene 7 — Closing: rigor + privacy (2:26–2:52)
 
-**Screen:** Cut back to `slides.html` — slide 4 (the results grid) while you talk about
-the evaluation, then slide 5 (end card with the GitHub link) to close on.
+**Screen:** Cut back to `slides.html` — slide 5 (the results grid) while you talk about
+the evaluation, then slide 6 (end card with the GitHub link) to close on.
 
 **Narration:**
-> "We didn't just build this — we evaluated it honestly. Our own eval suite caught a real
-> bug in our fusion logic and an overfitting text model before any judge could, and we
-> published the before-and-after numbers instead of hiding them. And every piece of
-> detection here — transcription, text scoring, voice forensics — runs completely
-> offline, locally, on the machine in front of you. No external API required, no audio
-> ever has to leave the device. This is Kavach."
+> "We didn't just build this — we tested it honestly. Our own evaluation suite found five
+> real bugs in our system before any judge could: fusion math that was quietly weakening
+> our best signal, a model that looked perfect on synthetic data and wasn't, and a voice
+> detector confident enough to call a clinic's appointment reminder a scam. We fixed all
+> five and published the before-and-after numbers instead of burying them. And every part
+> of the detection — transcription, text scoring, voice forensics — runs offline, on the
+> machine in front of you. No API keys, no audio ever leaving the device. This is Kavach."
 
 **End card:** Project name, GitHub link (`github.com/23f2001033/kavach`), team/build
 challenge name.
@@ -166,13 +180,28 @@ challenge name.
 
 | Scene | Time | Cumulative |
 |---|---|---|
-| 1. Hook | 20s | 0:20 |
-| 2. Live Guard flags scam | 45s | 1:05 |
-| 3. Explanation cards | 30s | 1:35 |
-| 4. Elderly Mode | 20s | 1:55 |
-| 5. Recording upload / voice clone | 35s | 2:30 |
-| 6. Closing: rigor + privacy | 25s | 2:55 |
+| 1. What it is | 14s | 0:14 |
+| 2. Why it matters | 16s | 0:30 |
+| 3. Live Guard flags scam | 42s | 1:12 |
+| 4. Explanation cards | 26s | 1:38 |
+| 5. Elderly Mode | 16s | 1:54 |
+| 6. Recording upload / voice clone | 32s | 2:26 |
+| 7. Closing: rigor + privacy | 26s | 2:52 |
 
-Total: **~2:55**, inside the 2.5–3 minute target. If you need to trim, Scene 4 (Elderly
-Mode) and the eval-numbers cutaway in Scene 6 are the safest to shorten first — Scenes 2
-and 3 are the emotional and technical core and shouldn't be cut.
+Total: **~2:52**, inside the 2.5–3 minute target. If you need to trim, Scene 5 (Elderly
+Mode) and the results cutaway in Scene 7 are the safest to shorten first — Scenes 3 and 4
+are the emotional and technical core and shouldn't be cut. **Do not trim Scene 1**: the
+first ten seconds decide whether a judge watches the rest with attention or with one eye.
+
+### Optional Scene 6b — the call it *doesn't* panic about (+15s)
+
+If you can spare the time, upload `demo_assets/demo_benign_call.wav` right after Scene 6
+and let it land on "suspicious" rather than "high":
+
+> "And here's a real clinic appointment reminder — also a synthetic voice, because most
+> automated calls are. Kavach notices the voice, says so honestly, and still doesn't call
+> it a scam. Getting that right matters as much as catching the scam: an app that cries
+> wolf at every robocall is an app people switch off."
+
+This is worth more to a technical judge than a second scam that lights up red — it shows
+you designed for false positives, which is the difference between a demo and a product.

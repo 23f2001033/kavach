@@ -170,6 +170,33 @@
     line-height: 1.5;
   }
 
+  .points {
+    list-style: none;
+    margin-top: 5vh;
+    text-align: left;
+    display: grid;
+    gap: 2.4vh;
+    max-width: 46ch;
+  }
+  .points li {
+    display: flex;
+    align-items: baseline;
+    gap: 1.2rem;
+    font-size: clamp(1rem, 3.1vh, 1.95rem);
+    color: var(--text-secondary);
+    line-height: 1.35;
+  }
+  .points li em {
+    color: var(--text-primary);
+    font-style: normal;
+    font-weight: 600;
+  }
+  .tick {
+    color: var(--low);
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+
   .link {
     font-family: "Cascadia Code", Consolas, "SF Mono", Menlo, monospace;
     font-size: clamp(.95rem, 2.8vh, 1.7rem);
@@ -229,7 +256,18 @@
   <p class="tagline anim">Your armor against scam calls</p>
 </section>
 
-<!-- 2. THE STAT ----------------------------------------------------------- -->
+<!-- 2. WHAT IT DOES -------------------------------------------------------- -->
+<section class="slide">
+  <h2 class="anim">A scam-call detector that<br>works <em style="color:var(--accent);font-style:normal">during</em> the call.</h2>
+  <ul class="points anim">
+    <li><span class="tick">✓</span> Warns you while you are still on the line — not after</li>
+    <li><span class="tick">✓</span> Tells you <em>why</em>, in plain words you can act on</li>
+    <li><span class="tick">✓</span> Detects when the caller's voice is an AI clone</li>
+    <li><span class="tick">✓</span> Runs entirely on your own device</li>
+  </ul>
+</section>
+
+<!-- 3. THE STAT ----------------------------------------------------------- -->
 <section class="slide">
   <p class="kicker anim">India, 2025</p>
   <div class="stat anim">₹22,495 crore</div>

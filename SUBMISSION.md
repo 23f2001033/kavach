@@ -13,6 +13,13 @@ Kavach
 
 *(max 200 characters)*
 
+> Kavach listens to a phone call as it happens and tells you, in plain words, if you're
+> being scammed and why — and whether the caller's voice is an AI clone. Runs on your device.
+
+(178 characters)
+
+*Alternative, if you prefer leading with the technique over the benefit:*
+
 > Real-time AI defense against phone scams — fuses voice-clone detection, scam-language
 > AI, and India-specific fraud signatures into one explainable verdict, live on the call.
 
