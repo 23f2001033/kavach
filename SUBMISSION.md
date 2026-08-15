@@ -1,7 +1,7 @@
-# Kavach — Devpost submission text
+# Kavach: Devpost submission text
 
-Copy-paste-ready text for the ML Empowerment Build Challenge 2.0 Devpost submission form.
-Section headers below match Devpost's standard project form.
+Copy-paste ready for the ML Empowerment Build Challenge 2.0. Each heading below maps to a
+field on the Devpost project form.
 
 ---
 
@@ -11,190 +11,180 @@ Kavach
 
 ## Elevator pitch
 
-*(max 200 characters)*
+*(Devpost limit: 200 characters)*
 
-> Scam blockers work after the call. Kavach works during it — warning you live, in plain
+> Scam blockers work after the call. Kavach works during it, warning you live, in plain
 > words, why a call is a scam and whether the voice is an AI clone. Runs on your device.
-
-(177 characters)
-
-The contrast in the first sentence is the hook; the second says what the thing actually
-*is*, which the hook alone doesn't. Gallery visitors see the project name and this line
-and nothing else, so it has to do both jobs.
-
-*Alternatives:*
-
-> Scam blockers work after the call. Kavach works during it.
-
-(57 characters — maximum punch, but a reader still doesn't learn what Kavach does. Better
-as the opening line of a pitch than as the standalone tagline.)
-
-> Real-time AI defense against phone scams — fuses voice-clone detection, scam-language
-> AI, and India-specific fraud signatures into one explainable verdict, live on the call.
-
-(173 characters — leads with technique instead of benefit.)
 
 ## Built with
 
-Python, FastAPI, PyTorch, HuggingFace Transformers, DistilBERT, wav2vec2, ONNX Runtime,
-faster-whisper, scikit-learn, React, Vite, Web Speech API, Kaggle (T4 GPU training),
-Gemini API (optional)
+python, fastapi, pytorch, huggingface-transformers, distilbert, wav2vec2, onnx-runtime,
+faster-whisper, scikit-learn, react, vite, web-speech-api, kaggle
 
 ## About the project
 
 ### Inspiration
 
-In 2025 alone, Indians lost ₹22,495 crore — about $2.7 billion — to cyber fraud, across
-2.81 million complaints, up 24% from the year before. And the tools scammers use just got
-sharper: voice cloning now needs only 3 to 30 seconds of sampled audio to produce a
-convincing fake (per CERT-In advisory CIAD-2024-0084), and in June 2026 the Five Eyes
-intelligence alliance formally warned that voice confirmation alone can no longer be
-trusted to verify who's on the other end of a call. What makes the "digital arrest" scam
-so effective isn't technical sophistication — it's that a fake police officer, real fear,
-and an artificial countdown are enough to stop someone from pausing to think, and the
-script explicitly tells the victim not to consult their family. The tools that exist
-today — carrier blocklists, caller-ID apps — only catch numbers *after* they've already
-been reported. Nothing protects you *during* the call, while the manipulation is actually
-happening. That gap is what we built Kavach to close.
+In 2025, Indians lost ₹22,495 crore (about $2.7 billion) to cyber fraud across 2.81 million
+complaints, up 24% year over year. The attacker's tools keep getting sharper: cloning a
+voice now takes as little as 3 to 30 seconds of sampled audio (CERT-In advisory
+CIAD-2024-0084), and in June 2026 the Five Eyes alliance warned that voice confirmation
+alone can no longer verify who is on a call.
+
+What makes the "digital arrest" scam so effective is not technical sophistication. It is
+that a fake police officer, real fear, and an artificial countdown are enough to stop
+someone from pausing to think, and the script explicitly instructs the victim not to
+consult their family. Existing defenses never reach that moment. Carrier blocklists and
+caller ID apps only flag numbers after someone has already been defrauded, which says
+nothing about a fresh number running a new script. Nothing protects you during the call
+itself, while the manipulation is actually happening. That gap is what Kavach closes.
 
 ### What it does
 
-Kavach listens to a phone call — through your mic live, pasted as a transcript, or
-uploaded as a recording — and gives you a real-time, explainable risk verdict by fusing
-three independent AI signals: a fine-tuned DistilBERT model that reads the conversation
-for social-engineering language, a knowledge base of 12 India-specific scam signatures
-(OTP requests, "digital arrest" threats, remote-access app installs, UPI collect-request
-tricks, and more) with plain-language explanations, and a fine-tuned wav2vec2 voice model
-that detects AI-cloned or synthetic speech from the audio itself. The three signals
-combine through noisy-OR fusion into one risk score with hysteresis, so the on-screen
-meter climbs smoothly instead of flickering. When risk crosses into "high," the app speaks
-a warning once and shows exactly *why* — quoted snippets from the transcript next to each
-matched scam sign, not a black-box number. An Elderly Mode strips the UI down to a giant
-gauge, a one-line verdict, and one piece of advice, for the demographic that scam callers
-target hardest. Everything runs locally — no external API is required for detection.
+Kavach listens to a phone call, live through your microphone, pasted as a transcript, or
+uploaded as a recording, and returns a real-time, explainable verdict built from three
+independent AI signals:
+
+1. A fine-tuned DistilBERT model that reads the conversation for social-engineering
+   language.
+2. A knowledge base of 12 India-specific scam signatures (OTP requests, "digital arrest"
+   threats, remote-access app installs, UPI collect-request tricks, secrecy demands and
+   more), each carrying a plain-language explanation.
+3. A fine-tuned wav2vec2 model that detects AI-cloned or synthetic speech from the audio
+   itself.
+
+The three signals combine through noisy-OR fusion into a single risk score, with
+hysteresis so the on-screen meter climbs smoothly instead of flickering. When risk crosses
+into "high", the app speaks a warning once and shows exactly why, quoting the line from
+the transcript that triggered each matched scam sign instead of presenting a black-box
+number. Elderly Mode strips the interface down to one gauge, one verdict and one line of
+advice, for the people scam callers target hardest. Detection runs entirely on the device.
+No external API is required.
 
 ### How we built it
 
-We assembled a training corpus of 5,943 call transcripts from five open BothBosu
-HuggingFace datasets plus 25 India-specific synthetic scenario families we wrote
-ourselves — digital arrest, fake KYC, UPI refund traps, courier customs, KBC lottery,
-army/OLX marketplace fraud, loan-app extortion, investment fraud, and job/hostel/dating-app
-advance fees — each paired with a matched *benign* look-alike call so the model has to
-learn the actual manipulation pattern, not just scam-adjacent vocabulary. Twenty real scam
-call recordings were held out entirely from training as an honest real-world probe. We
-fine-tuned `distilbert-base-uncased` on that corpus (with a sliding 256-token window for
-long calls) and `facebook/wav2vec2-base` as a bonafide-vs-spoof classifier on ASVspoof
-2019 LA, cross-evaluated on the independently-sourced In-the-Wild dataset — both trained
-entirely on free Kaggle T4 GPU time, both exported to ONNX for fast local inference. The
-FastAPI backend fuses text, signature, and voice scores through a noisy-OR combiner, and
-a React frontend delivers three ways in: live mic capture via the Web Speech API, paste-a-
-transcript, and upload-a-recording (transcribed locally with faster-whisper). We wrote an
-end-to-end evaluation harness from day one — 30 hand-written fresh scenarios plus the 20
-real held-out calls — and treated every result it produced as ground truth to react to,
-not a formality to pass.
+We assembled a corpus of 5,943 call transcripts from five open BothBosu HuggingFace
+datasets plus 25 India-specific synthetic scenario families we wrote ourselves: digital
+arrest, fake KYC, UPI refund traps, courier customs, KBC lottery, army/OLX marketplace
+fraud, loan-app extortion, investment fraud, and job, hostel and dating-app advance fees.
+Each scam family is paired with a matched benign look-alike call, so the model has to learn
+the manipulation pattern rather than scam-adjacent vocabulary. Twenty real scam call
+recordings were held out from training entirely, as an honest real-world probe.
+
+We fine-tuned `distilbert-base-uncased` on that corpus, using a sliding 256-token window so
+a signal buried in a long call still drives the score, and `facebook/wav2vec2-base` as a
+bonafide-versus-spoof classifier on ASVspoof 2019 LA, cross-evaluated on the independently
+sourced In-the-Wild dataset. Both were trained entirely on free Kaggle T4 GPU time and
+exported to ONNX for fast local inference. A FastAPI backend fuses the text, signature and
+voice scores, and a React frontend offers three ways in: live microphone capture via the
+Web Speech API, paste-a-transcript, and upload-a-recording transcribed locally with
+faster-whisper.
+
+We wrote the end-to-end evaluation harness on day one, covering 30 fresh hand-written
+scenarios plus the 20 real held-out calls, and treated every result it produced as
+something to react to rather than a formality to pass.
 
 ### Challenges we ran into
 
-Three debugging stories stick out. First, our eval suite caught the fusion math itself
-being broken: an earlier weighted-average combiner renormalized over whichever signals
-were active, and since no audio model existed yet at the time, every real request
-renormalized to effective weights of `{text: 0.588, signature: 0.412}` — so even a
-maximally confident text score of 1.0 capped out at 0.588, structurally below our 0.65
-"high" threshold, no matter how obvious the scam. Full fusion was catching *fewer* real
-scam calls than the text model alone (6/20 vs. the then-current pre-corpus-hardening
-TF-IDF baseline of 12/20) before we found this. We rewrote it
-as a noisy-OR combination that excludes absent signals from the product instead of
-diluting present ones, which took full-fusion real-call catch rate from 6/20 to 20/20 in
-that run. Second, the audio side ate two full training days for a boring reason: the
-public Kaggle mirror of the In-the-Wild cross-dataset ships the audio without the
-`meta.csv` label file the official release includes, and a later mirror sorted the same
-files into `real/` and `fake/` folders instead. Our training script assumed the documented
-layout, so it crashed at the evaluation step rather than silently scoring against
-nothing. We tracked down and shipped a verified copy of the 31,779-row label file into our
-own repo, and taught the loader to fall back to folder-name labels — only then did the
-19.5% cross-dataset EER we report actually mean anything. Third, we lost a completed
-94-minute wav2vec2 training run
-on Kaggle to a crash during the post-training eval step — the checkpoint existed in memory
-but was never written to disk before the crash took the process down. We fixed the script
-to save the model artifact immediately after training, *before* running any evaluation, so
-a crash during eval can never again cost us the actual trained weights. And the last one
-we caught with barely a day left, while preparing the demo video: we uploaded a recording
-of a completely benign clinic appointment reminder that happened to be a text-to-speech
-voice, and Kavach called it a scam with 0.92 confidence. The text model had scored it
-correctly and no scam signature had fired — but our voice-forensics signal carried enough
-weight to force a "high" verdict on its own, and the explanation underneath it claimed
+Four problems cost us the most time, and all four were found by our own testing.
+
+The fusion math was quietly broken. An earlier weighted-average combiner renormalized over
+whichever signals were active, and because no audio model existed yet, every request
+renormalized to effective weights of text 0.588 and signature 0.412. A maximally confident
+text score of 1.0 therefore capped at 0.588, structurally below our 0.65 "high" threshold,
+no matter how obvious the scam. Full fusion was catching fewer real scam calls than the
+text model alone, 6 out of 20 against the text model's 12, before we found it. Rewriting
+it as a noisy-OR combination that excludes absent signals instead of diluting present ones
+took full-fusion real-call catch rate from 6/20 to 20/20 in that run.
+
+The audio dataset ate two training days for a boring reason. The public Kaggle mirror of
+In-the-Wild ships the audio without the `meta.csv` label file the official release
+includes, and a second mirror sorted the same files into `real/` and `fake/` folders
+instead. Our script assumed the documented layout and crashed at the evaluation step. We
+tracked down and shipped a verified copy of the 31,779-row label file into our own repo,
+and taught the loader to fall back to folder-name labels. Only then did the 19.5%
+cross-dataset EER we report mean anything.
+
+We lost a completed 94-minute training run. The wav2vec2 model finished training on Kaggle
+and then the process crashed during post-training evaluation, before the weights were ever
+written to disk. We changed the script to save the model artifact immediately after
+training and before any evaluation, so an eval-time crash can never again destroy a
+finished run.
+
+The last one surfaced with barely a day left, while preparing the demo video. We uploaded a
+recording of an entirely benign clinic appointment reminder that happened to use a
+text-to-speech voice, and Kavach called it a scam with 0.92 confidence. The text model had
+scored it correctly and no signature had fired, but the voice-forensics signal alone
+carried enough weight to force a "high" verdict, and the explanation beneath it claimed
 "strong scam signs" while listing none. It was the right bug to find late, because it
-exposed a wrong assumption rather than a wrong line of code: a synthetic voice is not
-evidence of fraud. Bank IVRs, clinic reminders, and delivery notifications are all
-synthetic speech, and an app that shrieks at every one of them teaches exactly the elderly
-users we built this for to ignore it. We reweighted the voice signal so that on its own it
-can only reach "suspicious" — corroborating context, not proof — while a synthetic voice
-*plus* scam content still fires "high" immediately.
+exposed a wrong assumption rather than a wrong line of code. A synthetic voice is not
+evidence of fraud. Bank IVRs, clinic reminders and delivery notifications are all synthetic
+speech, and an app that shrieks at every one of them teaches the elderly users we built it
+for to ignore it. We reweighted the voice signal so that on its own it can only reach
+"suspicious", corroborating context rather than proof, while a synthetic voice combined
+with scam content still fires "high" immediately.
 
-### Accomplishments we're proud of
+### Accomplishments that we're proud of
 
-We're proud that our own testing found five real bugs in our system before any judge could
-— a fusion-math dilution bug, an overfitting text model, a training pipeline that could
-silently lose a finished run, a suspiciously perfect baseline number, and a voice signal
-that flagged legitimate robocalls as fraud — and that we fixed all five and kept the
-honest before/after numbers in the report instead of quietly overwriting them. We're
-proud that our text ensemble catches 19 of 20 real, never-before-seen scam call recordings
-(up from a TF-IDF baseline that catches 11/20 on the current hardened training corpus, and
-caught 12/20 on the original pre-hardening corpus), that our voice model achieves a 0.87%
-error rate on
-same-distribution data *and* that we reported its harder 19.5% cross-dataset number
-instead of hiding it, and that the entire detection pipeline — transcription, text
-scoring, voice forensics — runs completely offline with zero required external API calls,
-which matters for a tool meant to work for people who may not trust (or afford) a
-cloud-dependent app watching their calls.
+Our own testing found five real bugs before any judge could: a fusion-math dilution bug, an
+overfitting text model, a training pipeline that could silently lose a finished run, a
+baseline number that looked too good to be true, and a voice signal that flagged legitimate
+robocalls as fraud. We fixed all five and kept the honest before-and-after numbers in the
+report rather than quietly overwriting them.
+
+On results, our text ensemble catches 19 of 20 real, never-before-seen scam call
+recordings, against a TF-IDF baseline that catches 11 of 20 on the same corpus. Our voice
+model reaches a 0.87% equal error rate on same-distribution data, and we published its much
+harder 19.5% cross-dataset number rather than hiding it. The entire detection pipeline,
+transcription, text scoring and voice forensics, runs offline with zero required external
+API calls, which matters for a tool meant to serve people who may neither trust nor afford
+a cloud service listening to their phone calls.
 
 ### What we learned
 
-The most valuable thing we built wasn't a model — it was the habit of writing the eval
-harness before trusting any result, and of treating a suspiciously perfect number (our
-TF-IDF baseline hit 100% accuracy on synthetic test data) as a warning sign rather than a
-win. We learned that fusing multiple weak signals is genuinely harder than it looks —
-"just average them" is an easy way to accidentally build a system that's worse than its
-best single component, and we only found that because we measured text-alone performance
-as a baseline to beat, not just a config to include. We also learned a lot about the
-specific mechanics of India-targeted scams while writing the synthetic corpus — how
-"digital arrest" scripts use isolation and video-call pressure specifically to prevent a
-victim from consulting anyone, and how loan-app blackmail and army/OLX marketplace fraud
-exploit very different psychological levers than the classic tech-support scam most
-existing scam-detection tools were built around.
+The most valuable thing we built was not a model. It was the habit of writing the
+evaluation harness before trusting any result, and of treating a suspiciously perfect
+number as a warning rather than a win. Our TF-IDF baseline scored 100% on the synthetic
+test set and then caught barely half of the real calls.
 
-### What's next
+We learned that fusing weak signals is harder than it looks. "Just average them" is an easy
+way to build a system that performs worse than its own best component, and we only caught
+that because we measured text-alone performance as a baseline to beat instead of treating
+it as one configuration among many.
 
-Recalibrating the text ensemble's confidence (temperature scaling, or a lower fusion
-weight) to close the 2–3 remaining benign false positives at "high" that our own eval
-report documents honestly rather than hides; adding speaker diarization to
-`/analyze/recording` so caller and receiver turns are separated instead of one merged
-block; expanding voice-forensics training data across more TTS/vocoder families and
-languages to bring the cross-dataset EER down; and building an on-device mobile version
-so Kavach can sit on the actual phone call path, not just a browser tab.
+We also learned how differently India-targeted scams work from the tech-support scams most
+detection tools were built around. "Digital arrest" scripts use isolation and video-call
+pressure specifically to stop a victim from consulting anyone, and loan-app blackmail and
+army/OLX marketplace fraud pull on entirely different psychological levers.
 
-## Publishing the demo video
+### What's next for Kavach
 
-**Use YouTube, not Google Drive.** Devpost embeds YouTube and Vimeo inline, so a judge
-watches without leaving the submission page. A Drive link makes them click through, wait
-on a preview that often fails for large files, and sometimes hit a permissions wall — any
-of which can cost you the view entirely.
+Recalibrating the text ensemble's confidence, through temperature scaling or a lower fusion
+weight, to close the three benign false positives at "high" that our evaluation report
+documents openly. Adding speaker diarization to the recording endpoint so caller and
+receiver turns are separated instead of merged into one block. Expanding voice-forensics
+training across more TTS and vocoder families and more languages, to bring the
+cross-dataset error rate down. And building an on-device mobile version, so Kavach can sit
+on the actual call path rather than in a browser tab.
 
-1. Upload to YouTube and set visibility to **Public** (Unlisted also embeds fine, but
-   Public removes any doubt about access).
-2. Answer **"No, it's not made for kids"** — the "made for kids" setting disables
-   embedding, which would break the Devpost player.
-3. Title it something like `Kavach — real-time AI scam-call defense (ML Empowerment Build
-   Challenge 2.0)` and put the repo link in the description.
-4. **Verify it before submitting:** open the URL in a private/incognito window. If it
-   plays there, judges can see it.
-5. Paste that URL into Devpost's video field.
+---
 
-## Suggested prize categories
+## Submission checklist
 
-- Best Overall Project
-- Most Impactful Project
-- Best Use of Machine Learning
-- Best Web AI App
-- Most Innovative
-- Most Scalable
+**Repository:** https://github.com/23f2001033/kavach
+
+**Demo video: upload to YouTube, not Google Drive.** Devpost embeds YouTube inline, so a
+judge watches without leaving the page. A Drive link makes them click through, wait on a
+preview that often fails for large files, and sometimes hit a permissions wall. Any of
+those can cost you the view.
+
+1. Upload and set visibility to **Public**.
+2. Answer **"No, it's not made for kids"**. That setting disables embedding and would
+   break the Devpost player.
+3. Title it `Kavach: real-time AI scam-call defense (ML Empowerment Build Challenge 2.0)`
+   and put the repo link in the description.
+4. Open the URL in an incognito window to confirm it plays before you submit.
+5. Paste the URL into Devpost's video field.
+
+**Prize categories to enter:** Best Overall Project, Most Impactful Project, Best Use of
+Machine Learning, Best Web AI App, Most Innovative, Most Scalable.
