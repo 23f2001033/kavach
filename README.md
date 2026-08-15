@@ -9,6 +9,12 @@ reads the conversation for social-engineering patterns, a fine-tuned voice model
 detects AI-cloned/synthetic speech, and a knowledge base of India-specific scam tells. It
 runs entirely offline on commodity hardware.
 
+### ▶ [Watch the 3-minute demo](https://www.youtube.com/watch?v=aYzmbgwLgzA)
+
+There is no hosted instance to click: the models run locally by design, and shipping call
+audio to someone else's server is the thing this project exists to avoid. See
+[Quickstart](#quickstart) to run it yourself in two commands.
+
 | | |
 |---|---|
 | **Problem** | ₹22,495 crore (~$2.7B) lost to cyber fraud in India in 2025, 2.81M complaints, +24% YoY |
@@ -17,7 +23,7 @@ runs entirely offline on commodity hardware.
 | **Voice model** | wav2vec2-base, 0.87% EER same-dataset / 19.5% EER cross-dataset (honest, not cherry-picked) |
 | **Latency** | Sub-second on CPU for a typical call-length transcript |
 | **Privacy** | Core detection runs fully local — zero external API calls required |
-| **Tests** | 70 backend tests passing |
+| **Tests** | 80 backend tests passing |
 
 ---
 

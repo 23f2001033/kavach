@@ -173,6 +173,8 @@ on the actual call path rather than in a browser tab.
 
 **Repository:** https://github.com/23f2001033/kavach
 
+**Demo video:** https://www.youtube.com/watch?v=aYzmbgwLgzA
+
 **Demo video: upload to YouTube, not Google Drive.** Devpost embeds YouTube inline, so a
 judge watches without leaving the page. A Drive link makes them click through, wait on a
 preview that often fails for large files, and sometimes hit a permissions wall. Any of
